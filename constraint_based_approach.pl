@@ -1,13 +1,83 @@
 :- use_module(library(clpfd)).
 
+schedule(SLOTS, DAYOFF, PREFERED_DAYS, GROUPS):-
+    ensure_slots(SLOTS, DAYOFF),
+    %  The schedules of the tutorial groups. A group can not be assigned 
+    % to multiple meetings at the same time.
+    chain_per_group(SLOTS, GROUPS).
+
+
+chain_per_group(SLOTS, [GROUP|GROUPS]):-
+    list_group_timings(SLOTS, GROUP, TIMINGS_LIST),
+    chain(TIMINGS_LIST, "<"),
+    chain_per_group(SLOTS, GROUPS).
+
+list_group_timings([],_,[]).
+list_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
+    SLOT = (NUM, _, _, GROUP),
+    GROUP = TARGET_GROUP,
+    TIME = NUM,
+    list_group_timings(SLOTS, GROUP, TIMINGS_LIST).
+
+% Ensure slots structure, and NUM validaty
+ensure_slots([], _).
+ensure_slots([SLOT|SLOTS], DAYOFF):-
+    SLOT = (NUM, SUBJECT, TYPE, GROUP),
+    (
+        (NUM in 5..29, DAYOFF == 1);
+        (NUM in 0..24, DAYOFF == 6);
+        (NUM in 0..4\/10..29, DAYOFF = 2);
+        (NUM in 0..9\/15..29, DAYOFF = 3);
+        (NUM in 0..14\/20..29, DAYOFF = 4);
+        (NUM in 0..19\/25..29, DAYOFF = 5)
+    ),
+    nonvar(SUBJECT),
+    nonvar(TYPE),
+    nonvar(GROUP),
+    ensure_slots(SLOTS, DAYOFF).
+
+% Return the resource amount of a subject based on its type
+% Basically number of rooms
+% TODO Maybe edit according to priority somehow later
+get_room_resource(lab, 8).
+get_room_resource(tut, 50).
+get_room_resource(big_lec, 5).
+get_room_resource(small_lec, 1).
+   
+
+% set_tasks_per_group(_,[],[]).
+% set_tasks_per_group(SLOTS, [GROUP|GROUPS], [TASKS|LIST_OF_TASKS]):-
+%     set_tasks_of_group(SLOTS, GROUP, TMP_TASKS),
+%     set_tasks_per_group(SLOTS, GROUPS, LIST_OF_TASKS).
+
+
+% set_tasks_of_group([],_,[]).
+% % Ignore slot if it is not from the target_group
+% set_tasks_of_group([SLOT|SLOTS], TARGET_GROUP, TASKS):-
+%     SLOT = (_, _, _, GROUP),
+%     GROUP \= TARGET_GROUP,
+%     set_tasks_of_group(SLOTS, TARGET_GROUP, TASKS).
+% % Create a task of a slot if it is of that target_group
+% set_tasks_of_group([SLOT|SLOTS], TARGET_GROUP, [TASK|TASKS]):-
+%     SLOT = (NUM, SUBJECT, TYPE, GROUP),
+%     GROUP = TARGET_GROUP,
+%     TASK = (S1, _, _, 1, _),
+%     set_tasks_of_group(SLOTS, TARGET_GROUP, TASKS).
+
+
+% Rooms : 50
+% Large halls (capacity 230) : 5
+% Small halls (capacity 100) :1
+% Computer labs : 8
+
 % VARIABLES:
 % A SLOT is to be assigned to a location {ROOM, SMALL_HALL, BIG_HALL, LAB} (if possible)
 % if a slot cannot be a signed to a location, along the rest of the constraints
 % that means that it cannot be there.
 % Another then with different -- NUM -- should be used!
 % 
-% A SLOT can be identified as (NUM, SUBJECT, TYPE, GROUP)
-% EX (3, SATURDAY, GRAPHICS, LAB, 7 CSEN T18)
+    % A SLOT can be identified as (NUM, SUBJECT, TYPE, GROUP)
+    % EX (3, GRAPHICS, LAB, 7 CSEN T18)
 % 
 % NUM: {0..29} .. 5X6
 % 
@@ -24,9 +94,6 @@
 % CONSTRAINTS:
 % 
 % 1. Conflicts
-%  The schedules of the tutorial groups. A group can not be assigned to multiple meetings at the same
-% time.
-% -- (CAN BE SATISIFIED STRAIGHT FORWARDLY BY THE MODEL ABOVE)
 %  The schedules of the faculty members. A staff member can not be assigned to multiple meetings at
 % the same time.
 % -- (NOT EVEN REFERED TO ANYWHERE, MAYBE SOLVABLE IF BASED ON CHOICES OF INPUTS! AKA ANOTHER INTERSECTED SCHEDULE)
