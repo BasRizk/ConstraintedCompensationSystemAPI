@@ -4,18 +4,14 @@
 % A SLOT is to be assigned to a location {ROOM, SMALL_HALL, BIG_HALL, LAB} (if possible)
 % if a slot cannot be a signed to a location, along the rest of the constraints
 % that means that it cannot be there.
-% Another then with different -- NUM, OR DAY -- should be used!
+% Another then with different -- NUM -- should be used!
 % 
-% A SLOT can be identified as (NUM, DAY, SUBJECT, TYPE, GROUP)
-% EX (3, SATURDAY, GRAPHICS LAB, LAB, 7 CSEN T18)
+% A SLOT can be identified as (NUM, SUBJECT, TYPE, GROUP)
+% EX (3, SATURDAY, GRAPHICS, LAB, 7 CSEN T18)
 % 
-% NUM: {1,2,3,4,5}
+% NUM: {0..29} .. 5X6
 % 
-% DAY: {1,2,3,4,5,6} .. {Sat, .., Thurs}
-% 
-% 
-% SUBJECT: Any sort of subject...
-% ex. Phyiscs lab is considered as different subject than Physics Tut. than Physics Lec.
+% SUBJECT: Any sort of subject
 % 
 % TYPE: {LAB, SMALL_LEC, BIG_LEC, TUT}
 % 
