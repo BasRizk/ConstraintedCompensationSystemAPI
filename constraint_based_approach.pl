@@ -1,10 +1,24 @@
 :- use_module(library(clpfd)).
 
-schedule(SLOTS, DAYOFF, PREFERED_DAYS, GROUPS):-
+% SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP)
+
+schedule(SLOTS, DAYOFF, PREFERED_DAYS, SUBJECTS, GROUPS, SUBGROUPS):-
+    % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
     ensure_slots(SLOTS, DAYOFF),
     %  The schedules of the tutorial groups. A group can not be assigned 
     % to multiple meetings at the same time.
-    chain_per_group(SLOTS, GROUPS).
+
+    % (TIMING, SUBGROUP)
+    % No subgroup have more than one slot at the same time
+    chain_per_group(SLOTS, SUBGROUPS).
+
+    % (TIMING, LOCATION)
+    % TODO No slot at the same location at the same time
+    % Ensure allocation of resources
+
+    % (TIMING, SUBJECT, TYPE, GROUP)
+    % TODO No slot given the same subject -if a lec- to the same group at the same time
+    chain_per_group_same_subject(SLOTS, SUBJECTS, GROUPS)
 
 
 chain_per_group(SLOTS, [GROUP|GROUPS]):-
@@ -39,10 +53,10 @@ ensure_slots([SLOT|SLOTS], DAYOFF):-
 % Return the resource amount of a subject based on its type
 % Basically number of rooms
 % TODO Maybe edit according to priority somehow later
-get_room_resource(lab, 8).
-get_room_resource(tut, 50).
-get_room_resource(big_lec, 5).
-get_room_resource(small_lec, 1).
+% get_room_resource(lab, 8).
+% get_room_resource(tut, 50).
+% get_room_resource(big_lec, 5).
+% get_room_resource(small_lec, 1).
    
 
 % set_tasks_per_group(_,[],[]).
@@ -76,8 +90,8 @@ get_room_resource(small_lec, 1).
 % that means that it cannot be there.
 % Another then with different -- NUM -- should be used!
 % 
-    % A SLOT can be identified as (NUM, SUBJECT, TYPE, GROUP)
-    % EX (3, GRAPHICS, LAB, 7 CSEN T18)
+    % A SLOT can be identified as (NUM, SUBJECT, TYPE, GROUP, SUBGROUP)
+    % EX (3, GRAPHICS, LAB, 7 CSEN, T18)
 % 
 % NUM: {0..29} .. 5X6
 % 
@@ -85,6 +99,7 @@ get_room_resource(small_lec, 1).
 % 
 % TYPE: {LAB, SMALL_LEC, BIG_LEC, TUT}
 % 
+% TODO --MODIFY ACCORDING TO NEW
 % GROUP: Any sort of group...
 % ex. 7 CSEN is considered as different group than the more specific group 7 CSEN T18
 % 
