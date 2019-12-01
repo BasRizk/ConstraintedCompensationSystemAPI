@@ -159,6 +159,7 @@ schedule_file = pd.read_excel(filename, sheet_name = sheet_names, index=None,
 
 days_schedules = extract_days(schedule_file)
 
+# TODO set locations!!
 all_slots = listify_slots(days_schedules)
 
 
