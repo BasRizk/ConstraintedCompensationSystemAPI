@@ -81,11 +81,13 @@ def is_tut(title):
     return None
 
 def is_lab(title):
-    matches = re.search("^([a-z ]+)( lab )(\d+[,\d]*)$", title)
+    matches = re.search("^([a-z. ]+)( lab )(\d+[,\/\d]*)$", title)
     if matches:
-        return ("lab", matches[1], matches[3].split(","))
+        return ("lab", matches[1], re.split("[,\/]+", matches[3]))
     matches = re.search("^([a-z ]+)( l )(\d+[,\d]*)$", title)
     if matches:
+#        print("another_type_of_lab")
+#        print(matches[0])
         return ("lab", matches[1], matches[3].split(","))
     return None
 
@@ -119,19 +121,40 @@ def get_slot_specific_info(title):
 
     print("ERROR: with type: " + str(title))
     return None
+
+def allocate_slot(slot_type, available_locations):
+    # 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs  
+    if(slot_type == "lab"):
+        loc_i = 3
+        offset = 56
+    elif(slot_type == "tut"):
+        loc_i = 0
+        offset = 0
+    elif("lec" in slot_type):
+        loc_i = 1
+        offset = 50
         
-def listify_a_slot(time, day, group, title, location = 0):
-    # TODO set locations    
+    if available_locations[loc_i] > 0:
+        location = offset + available_locations[loc_i] - 1
+        available_locations[loc_i] -= 1
+    else:
+        print("ERROR: allocation")
+        
+    return location, available_locations        
+
+def listify_a_slot(time, day, group, title, available_locations):
     time_num = headers.index(time)
     day_num = sheet_names.index(day)
     slot_num = (time_num - 1) + (day_num*5)
     slot_type, slot_subject, subgroups = get_slot_specific_info(title)
+    location, available_locations =\
+        allocate_slot(slot_type, available_locations)
     all_slots = []
     for subgroup in subgroups:
         slot_formatted =\
             (slot_num, slot_subject, slot_type, group, subgroup, location)
         all_slots.append(slot_formatted)
-    return all_slots
+    return all_slots, available_locations
 
 def listify_slots(extracted_schedule):
     list_of_formatted_slots = []
@@ -139,15 +162,29 @@ def listify_slots(extracted_schedule):
         day_schedule = extracted_schedule[day]
         for group in day_schedule.keys():
             group_day = day_schedule[group]
+            available_locations = [50, 5, 1, 8]
             for time in headers[1:]:
                 slot_contents = group_day[time]
                 for title in slot_contents:
                     if title == "nan" or title == "free":
                         continue
-                    for slot in listify_a_slot(time, day, group, title):
+                    slots, available_locations =\
+                        listify_a_slot(time, day, group, title,
+                                       available_locations)
+                    for slot in slots:
                         list_of_formatted_slots.append(slot)
     return list_of_formatted_slots
-            
+          
+def clean_subject(subject):
+    return subject.strip().strip("tut").strip().strip("t")
+
+def clean_formatted_slots(formatted_slots):
+    cleaned_slots = []
+    for (num, subject, slot_type, group, subgroup, location) in formatted_slots:
+        subject = clean_subject(subject)
+        slot = (num, subject, slot_type, group, subgroup, location)
+        cleaned_slots.append(slot)
+    return cleaned_slots
 
 filename = "MET_Winter19_schedule_31131.xlsx"
 sheet_names = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
@@ -158,8 +195,6 @@ schedule_file = pd.read_excel(filename, sheet_name = sheet_names, index=None,
                               names=headers, header=None, usecols=columns_to_use)
 
 days_schedules = extract_days(schedule_file)
-
-# TODO set locations!!
 all_slots = listify_slots(days_schedules)
-
+all_slots_cleaned = clean_formatted_slots(all_slots)
 
