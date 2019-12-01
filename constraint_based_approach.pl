@@ -10,28 +10,47 @@ schedule(SLOTS, DAYOFF, PREFERED_DAYS, SUBJECTS, GROUPS, SUBGROUPS):-
 
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
-    chain_per_group(SLOTS, SUBGROUPS).
+    chain_per_subgroup(SLOTS, SUBGROUPS),
+
+    % (TIMING, SUBJECT, TYPE, GROUP)
+    % No slot given the same subject -if a lec- to the same group at the same time
+    chain_lec_per_group_same_subject(SLOTS, SUBJECTS, GROUPS).
 
     % (TIMING, LOCATION)
     % TODO No slot at the same location at the same time
     % Ensure allocation of resources
 
-    % (TIMING, SUBJECT, TYPE, GROUP)
-    % TODO No slot given the same subject -if a lec- to the same group at the same time
-    chain_per_group_same_subject(SLOTS, SUBJECTS, GROUPS)
 
 
-chain_per_group(SLOTS, [GROUP|GROUPS]):-
-    list_group_timings(SLOTS, GROUP, TIMINGS_LIST),
+chain_lec_per_group_same_subject(_,[],_).
+chain_lec_per_group_same_subject(SLOTS, [SUBJECT|SUBJECTS], GROUPS):-
+    chain_lec_same_subject(SLOTS, SUBJECT, GROUPS),
+    chain_lec_per_group_same_subject(SLOTS, SUBJECTS, GROUPS).
+
+chain_lec_same_subject(_,_,[]).
+chain_lec_same_subject(SLOTS, SUBJECT, [GROUP|GROUPS]):-
+    list_lec_group_timings_with_same_subject(SLOTS, SUBJECT, GROUP, TIMINGS_LIST),
     chain(TIMINGS_LIST, "<"),
-    chain_per_group(SLOTS, GROUPS).
+    chain_lec_same_subject(SLOTS, SUBJECT, GROUPS).
 
-list_group_timings([],_,[]).
-list_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
-    SLOT = (NUM, _, _, GROUP),
+list_lec_group_timings_with_same_subject([SLOT|SLOTS], TARGET_SUBJECT, TARGET_GROUP, [TIME|TIMINGS_LIST]):-
+    SLOT = (NUM, SUBJECT, _, GROUP, _),
+    SUBJECT = TARGET_SUBJECT,
     GROUP = TARGET_GROUP,
     TIME = NUM,
-    list_group_timings(SLOTS, GROUP, TIMINGS_LIST).
+    list_lec_group_timings_with_same_subject(SLOTS, TARGET_SUBJECT, TARGET_GROUP, TIMINGS_LIST).
+
+chain_per_subgroup(SLOTS, [GROUP|GROUPS]):-
+    list_subgroup_timings(SLOTS, GROUP, TIMINGS_LIST),
+    chain(TIMINGS_LIST, "<"),
+    chain_per_subgroup(SLOTS, GROUPS).
+
+list_subgroup_timings([],_,[]).
+list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
+    SLOT = (NUM, _, _, _, SUBGROUP),
+    SUBGROUP = TARGET_SUBGROUP,
+    TIME = NUM,
+    list_subgroup_timings(SLOTS, TARGET_SUBGROUP, TIMINGS_LIST).
 
 % Ensure slots structure, and NUM validaty
 ensure_slots([], _).
@@ -79,10 +98,6 @@ ensure_slots([SLOT|SLOTS], DAYOFF):-
 %     set_tasks_of_group(SLOTS, TARGET_GROUP, TASKS).
 
 
-% Rooms : 50
-% Large halls (capacity 230) : 5
-% Small halls (capacity 100) :1
-% Computer labs : 8
 
 % VARIABLES:
 % A SLOT is to be assigned to a location {ROOM, SMALL_HALL, BIG_HALL, LAB} (if possible)
@@ -90,7 +105,7 @@ ensure_slots([SLOT|SLOTS], DAYOFF):-
 % that means that it cannot be there.
 % Another then with different -- NUM -- should be used!
 % 
-    % A SLOT can be identified as (NUM, SUBJECT, TYPE, GROUP, SUBGROUP)
+    % A SLOT can be identified as (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, LOCATION)
     % EX (3, GRAPHICS, LAB, 7 CSEN, T18)
 % 
 % NUM: {0..29} .. 5X6
@@ -99,12 +114,16 @@ ensure_slots([SLOT|SLOTS], DAYOFF):-
 % 
 % TYPE: {LAB, SMALL_LEC, BIG_LEC, TUT}
 % 
-% TODO --MODIFY ACCORDING TO NEW
-% GROUP: Any sort of group...
-% ex. 7 CSEN is considered as different group than the more specific group 7 CSEN T18
+% GROUP: The group taken the course ex. 7 CSEN 
 % 
-% ANOTHER OPTION FOR GROUP: is to contain GROUP and SUBGROUP
-% where then (7CSEN, L1) is lecture group for example, and (7CSEN, T18) is more specific group example
+% SUBGROUP: The subgroup represents the tut. lab. or a lec. group (basically repeated) ex. T18
+%
+% LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs  
+% 
+% Rooms : 50
+% Large halls (capacity 230) : 5
+% Small halls (capacity 100) :1
+% Computer labs : 8
 
 % CONSTRAINTS:
 % 
