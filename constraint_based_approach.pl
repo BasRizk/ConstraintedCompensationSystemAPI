@@ -23,7 +23,7 @@
 %                          \/
 % 
 
-schedule(SLOTS, HOLIDAY, PREFERED_DAYS, SUBJECTS, GROUPS, SUBGROUPS):-
+schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
 
     %  The schedules of the tutorial groups. A group can not be assigned 
@@ -54,6 +54,7 @@ schedule(SLOTS, HOLIDAY, PREFERED_DAYS, SUBJECTS, GROUPS, SUBGROUPS):-
 % 2. Room Type Optimization -- Prioritize usage of non-labs to non-labs
 % LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs  
 ensure_allocation([],[]).
+
 ensure_allocation([SLOT|SLOTS], [LOCATION|LOCATIONS]):-
     % PRIORITIZED OPTIMAL SOLUTION
     SLOT = (_, _, TYPE, _, _, LOCATION),
@@ -64,6 +65,7 @@ ensure_allocation([SLOT|SLOTS], [LOCATION|LOCATIONS]):-
         (TYPE = tut, LOCATION in 0..49)
     ),
     ensure_allocation(SLOTS, LOCATIONS).
+
 ensure_allocation([SLOT|SLOTS], [LOCATION|LOCATIONS]):-
     % POSSIBLE ANSWER ALSO
     SLOT = (_, _, TYPE, _, LOCATION),
@@ -111,12 +113,12 @@ ensure_slots([], _).
 ensure_slots([SLOT|SLOTS], HOLIDAY):-
     SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _),
     (
-        (NUM in 5..29, HOLIDAY == 1);
-        (NUM in 0..24, HOLIDAY == 6);
-        (NUM in 0..4\/10..29, HOLIDAY = 2);
-        (NUM in 0..9\/15..29, HOLIDAY = 3);
-        (NUM in 0..14\/20..29, HOLIDAY = 4);
-        (NUM in 0..19\/25..29, HOLIDAY = 5)
+        (HOLIDAY #= 1, NUM in 5..29);
+        (HOLIDAY #= 6, NUM in 0..24);
+        (HOLIDAY #= 2, NUM in 0..4\/10..29);
+        (HOLIDAY #= 3, NUM in 0..9\/15..29);
+        (HOLIDAY #= 4, NUM in 0..14\/20..29);
+        (HOLIDAY #= 5, NUM in 0..19\/25..29)
     ),
     nonvar(SUBJECT),
     nonvar(TYPE),
