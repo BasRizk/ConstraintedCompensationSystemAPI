@@ -5,7 +5,7 @@ import pandas as pd
 def clean_rows(schedule):
     schedule = schedule.dropna(how="all", subset=headers[1:])
     schedule = schedule.apply(lambda x: x.astype(str).str.lower())
-    list_of_dumb = ["rooms", "large lecture halls", "small lecture halls", "cs labs"]
+    list_of_dumb = ["rooms", "large lecture halls", "small lecture halls", "cs labs", "1architecture"]
     for to_dumb in list_of_dumb:
         schedule =\
             schedule[schedule["GROUP"] != to_dumb]
@@ -76,8 +76,11 @@ def is_tut(title):
     # Special case ex. 2 tut
     matches = re.search("^(\d+)*[ ]*([a-z]+)(,[\S ]*)?$", title)
     if matches:
-#        print("another type of tut")
-        return ("tut", matches[2], matches[1].split(","))
+        if matches[2] == "tut":
+            return ("tut", "csenarch", matches[1].split(","))
+        else:
+    #        print("another type of tut")
+            return ("tut", matches[2], matches[1].split(","))
     return None
 
 def is_lab(title):
@@ -96,13 +99,13 @@ def is_lec(title):
     matches = re.search("^([a-z& ]*)h(\d+[,\d]*)( \/[\S ]*)?$", title)
     if matches:
         if matches[1] and (matches[1] != ""):
-            return ("lec", matches[1], matches[2].split(","))
+            return ("small_lec", matches[1], matches[2].split(","))
         # Not named lecture       
-        return ("lec", matches[2], matches[2].split(","))
+        return ("small_lec", matches[2], matches[2].split(","))
     # Special case ex.  'what-ever lec[ ]?((room))?'
     matches = re.search("^([a-z&\- ]*)lec[ ]?(\(room\))?$$", title) 
     if matches:
-        return ("lec", matches[1], matches[1].split(","))
+        return ("small_lec", matches[1], matches[1].split(","))
 
     return None
 
@@ -176,7 +179,10 @@ def listify_slots(extracted_schedule):
     return list_of_formatted_slots
           
 def clean_subject(subject):
-    return subject.strip().strip("tut").strip().strip("t")
+    subject = subject.strip()
+    subject = subject.strip("tut").strip().strip("t").strip()
+    subject = subject.strip("lab").strip().strip("l").strip()
+    return subject
 
 def clean_formatted_slots(formatted_slots):
     cleaned_slots = []
@@ -194,7 +200,54 @@ columns_to_use = [1,2,3,4,5,6]
 schedule_file = pd.read_excel(filename, sheet_name = sheet_names, index=None,
                               names=headers, header=None, usecols=columns_to_use)
 
+def convert_to_query_format(slot):
+    return "".join(re.split("['| |\-|.|\"]",str(slot)))
+
+def create_query(slots, compensation_slot = None, holiday = 0):
+    # Note: a day contains 5 slots    
+    first_slot_in_holiday = holiday*5
+    last_slot_in_holiday = (holiday*5) + 4
+    slots_string = "["
+    for slot in slots:
+        slot_num = slot[0]
+        if (slot_num >= first_slot_in_holiday) and (slot_num <= last_slot_in_holiday):
+            continue
+        slots_string += convert_to_query_format(slot)
+        slots_string +=  ","
+    
+    slots_string = slots_string[:-1] + "]"
+    
+    subjects, groups, subgroups = listify_on_own(slots)
+    subjects = convert_to_query_format(subjects)
+    groups = convert_to_query_format(groups)
+    subgroups = convert_to_query_format(subgroups)
+    
+    return "schedule(%s,%s,%s,%s,%s)" %\
+         (slots_string, str(holiday), subjects, groups, subgroups)
+    
+    
+
+def listify_on_own(slots, subjects = True, groups = True, subgroups = True):
+    all_subjects = set()
+    all_groups = set()
+    all_subgroups = set()
+    for (_, subject, slot_type, group, subgroup, _) in slots:
+        if subject == '':
+            print("ERROR: subject is empty!")
+            print(group)
+            print(slot_type)
+            print(subject)
+        if subjects:
+            all_subjects.add(convert_to_query_format(subject))
+        if groups:
+            all_groups.add(group)
+        if subgroups:
+            all_subgroups.add(group + subgroup)
+        
+    return list(all_subjects), list(all_groups), list(all_subgroups)
+
 days_schedules = extract_days(schedule_file)
 all_slots = listify_slots(days_schedules)
-all_slots_cleaned = clean_formatted_slots(all_slots)
-
+all_slots = clean_formatted_slots(all_slots)
+#compensation_slot = ()
+query = create_query(all_slots)
