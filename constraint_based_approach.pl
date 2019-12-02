@@ -26,12 +26,13 @@
 schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
     print("Began"), nl,
-    %  The schedules of the tutorial groups. A group can not be assigned 
+    % => The schedules of the tutorial groups. A group can not be assigned 
     % to multiple meetings at the same time.
     ensure_slots(SLOTS, HOLIDAY),
     print("SLOTS ENSURED"), nl,
+
     % (TIMING, LOCATION)
-    %  The schedules of the rooms. A room can not be assigned to multiple meetings at the same time.
+    % => The schedules of the rooms. A room can not be assigned to multiple meetings at the same time.
     % No slot at the same location at the same time
     % Ensure allocation of resources
     ensure_allocation(SLOTS),
@@ -42,21 +43,21 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
     chain_per_subgroup(SLOTS, SUBGROUPS),
-    print("CHAINED PER SUBGROUPS ENSURED"), nl.
+    print("CHAINED PER SUBGROUPS ENSURED"), nl,
 
-    % % (TIMING, SUBJECT, TYPE, GROUP)
-    % % No slot given the same subject -if a lec- to the same group at the same time
-    % chain_lec_per_group_same_subject(SLOTS, SUBJECTS, GROUPS),
-    % print("CHAINED LEC PER GROUP SAME SUBJECT ENSURED"), nl.
+    % (TIMING, SUBJECT, TYPE, GROUP)
+    % No more than one lec given to the same group at the same time
+    chain_lec_per_group(SLOTS, GROUPS),
+    print("CHAINED LEC PER GROUP SAME SUBJECT ENSURED"), nl.
 
 
-
-% Ensure allocation
-% 1. Meeting types -- Assign TYPE LAB to lab resource only
-% 2. Room Type Optimization -- Prioritize usage of non-labs to non-labs
-% LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs  
+/**
+ * Ensure allocation
+ * 1. Meeting types -- Assign TYPE LAB to lab resource only
+ * 2. Room Type Optimization -- Prioritize usage of non-labs to non-labs
+ * LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs  
+ */
 ensure_allocation([]).
-
 ensure_allocation([SLOT|SLOTS]):-
     % PRIORITIZED OPTIMAL SOLUTION
     SLOT = (_, _, TYPE, _, _, LOCATION),
@@ -67,7 +68,6 @@ ensure_allocation([SLOT|SLOTS]):-
         (TYPE = tut, LOCATION in 0..49)
     ),
     ensure_allocation(SLOTS).
-
 ensure_allocation([SLOT|SLOTS]):-
     % POSSIBLE ANSWER ALSO
     SLOT = (_, _, TYPE, _, _, LOCATION),
@@ -77,27 +77,30 @@ ensure_allocation([SLOT|SLOTS]):-
     ),
     ensure_allocation(SLOTS).
 
-% Chain lectures of the same subject of each group
-chain_lec_per_group_same_subject(_,[],_).
-chain_lec_per_group_same_subject(SLOTS, [SUBJECT|SUBJECTS], GROUPS):-
-    chain_lec_same_subject(SLOTS, SUBJECT, GROUPS),
-    chain_lec_per_group_same_subject(SLOTS, SUBJECTS, GROUPS).
-
-chain_lec_same_subject(_,_,[]).
-chain_lec_same_subject(SLOTS, SUBJECT, [GROUP|GROUPS]):-
-    list_lec_group_timings_with_same_subject(SLOTS, SUBJECT, GROUP, TIMINGS_LIST),
+/**
+ * Chain lectures of the same group for each group
+ * 
+ */
+chain_lec_per_group(_,[]).
+chain_lec_per_group(SLOTS, [GROUP|GROUPS]):-
+    list_lec_group_timings(SLOTS, GROUP, TIMINGS_LIST),
     chain(TIMINGS_LIST, #<),
-    chain_lec_same_subject(SLOTS, SUBJECT, GROUPS).
+    chain_lec_per_group(SLOTS, GROUPS).
 
-list_lec_group_timings_with_same_subject([SLOT|SLOTS], TARGET_SUBJECT, TARGET_GROUP, [TIME|TIMINGS_LIST]):-
-    SLOT = (NUM, SUBJECT, _, GROUP, _, _),
-    SUBJECT = TARGET_SUBJECT,
-    GROUP = TARGET_GROUP,
-    TIME = NUM,
-    list_lec_group_timings_with_same_subject(SLOTS, TARGET_SUBJECT, TARGET_GROUP, TIMINGS_LIST).
+list_lec_group_timings([],_,[]).
+list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, TIMINGS_LIST):-
+    SLOT = (_, _, TYPE, GROUP, _, _),
+    (TYPE \= small_lec; TYPE \= big_lec; GROUP \= TARGET_GROUP),
+    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST).
+list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
+    SLOT = (TIME, _, TYPE, TARGET_GROUP, _, _),
+    (TYPE = small_lec; TYPE = big_lec),
+    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST).
 
 
-% Chain all types of slots for each subgroup
+/**
+ * Chain all types of slots for each subgroup
+ */
 chain_per_subgroup(_,[]).
 chain_per_subgroup(SLOTS, [SUBGROUP|SUBGROUPS]):-
     list_subgroup_timings(SLOTS, SUBGROUP, TIMINGS_LIST),
@@ -114,7 +117,10 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
     SLOT = (TIME, _, _, _, TARGET_SUBGROUP, _),
     list_subgroup_timings(SLOTS, TARGET_SUBGROUP, TIMINGS_LIST).
 
-% Ensure slots structure, and NUM of slot validity
+/**
+ * Ensure slots structure, and NUM of slot validity
+ * 
+ */
 ensure_slots([], _).
 ensure_slots([SLOT|SLOTS], HOLIDAY):-
     SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _),
@@ -131,21 +137,11 @@ ensure_slots([SLOT|SLOTS], HOLIDAY):-
     nonvar(GROUP),
     nonvar(SUBGROUP),
     ensure_slots(SLOTS, HOLIDAY).
-
-% Return the resource amount of a subject based on its type
-% Basically number of rooms
-% TODO Maybe edit according to priority somehow later
-% get_room_resource(lab, 8).
-% get_room_resource(tut, 50).
-% get_room_resource(big_lec, 5).
-% get_room_resource(small_lec, 1).
    
-
 % set_tasks_per_group(_,[],[]).
 % set_tasks_per_group(SLOTS, [GROUP|GROUPS], [TASKS|LIST_OF_TASKS]):-
 %     set_tasks_of_group(SLOTS, GROUP, TMP_TASKS),
 %     set_tasks_per_group(SLOTS, GROUPS, LIST_OF_TASKS).
-
 
 % set_tasks_of_group([],_,[]).
 % % Ignore slot if it is not from the target_group
@@ -159,9 +155,6 @@ ensure_slots([SLOT|SLOTS], HOLIDAY):-
 %     GROUP = TARGET_GROUP,
 %     TASK = (S1, _, _, 1, _),
 %     set_tasks_of_group(SLOTS, TARGET_GROUP, TASKS).
-
-
-
 
 % CONSTRAINTS:
 % 

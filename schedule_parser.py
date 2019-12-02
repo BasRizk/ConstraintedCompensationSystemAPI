@@ -3,11 +3,7 @@
 import pandas as pd
 import re
 
-list_of_ignored = ["1architecture", "1engineering i", "1engineering ii",
-    "1engineering iii", "1engineering iv", "1engineering iv",
-    "1engineering v", "1engineering vi", "1engineering vii",
-    "1engineering viii", "1engineering ix", "1engineering x",
-    "9 csen", "9 dmet"]
+list_of_ignored = ["1architecture", "9 csen", "9 dmet"]
     
 filename = "MET_Winter19_schedule_31131.xlsx"
 sheet_names = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
