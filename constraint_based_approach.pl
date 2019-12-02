@@ -25,20 +25,19 @@
 
 schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
-
+    print("Began"), nl,
     %  The schedules of the tutorial groups. A group can not be assigned 
     % to multiple meetings at the same time.
     ensure_slots(SLOTS, HOLIDAY),
-
+    print("SLOTS ENSURED"), nl,
     % (TIMING, LOCATION)
     %  The schedules of the rooms. A room can not be assigned to multiple meetings at the same time.
     % No slot at the same location at the same time
     % Ensure allocation of resources
-    ensure_allocation(SLOTS, LOCATIONS),
-    all_different(LOCATIONS),
+    ensure_allocation(SLOTS),
+    % TODO Ensure allocation all_different per slot
 
-
-    % (TIMING, SUBGROUP)
+    % (TIMING, SUBGROUP)l
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
     chain_per_subgroup(SLOTS, SUBGROUPS),
@@ -53,9 +52,9 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
 % 1. Meeting types -- Assign TYPE LAB to lab resource only
 % 2. Room Type Optimization -- Prioritize usage of non-labs to non-labs
 % LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs  
-ensure_allocation([],[]).
+ensure_allocation([]).
 
-ensure_allocation([SLOT|SLOTS], [LOCATION|LOCATIONS]):-
+ensure_allocation([SLOT|SLOTS]):-
     % PRIORITIZED OPTIMAL SOLUTION
     SLOT = (_, _, TYPE, _, _, LOCATION),
     (
@@ -64,16 +63,16 @@ ensure_allocation([SLOT|SLOTS], [LOCATION|LOCATIONS]):-
         (TYPE = small_lec, LOCATION in 55..55);
         (TYPE = tut, LOCATION in 0..49)
     ),
-    ensure_allocation(SLOTS, LOCATIONS).
+    ensure_allocation(SLOTS).
 
-ensure_allocation([SLOT|SLOTS], [LOCATION|LOCATIONS]):-
+ensure_allocation([SLOT|SLOTS]):-
     % POSSIBLE ANSWER ALSO
     SLOT = (_, _, TYPE, _, LOCATION),
     (
         (TYPE = small_lec, LOCATION in 50..55);
         (TYPE = tut, LOCATION in 0..63)
     ),
-    ensure_allocation(SLOTS, LOCATIONS).
+    ensure_allocation(SLOTS).
 
 % Chain lectures of the same subject of each group
 chain_lec_per_group_same_subject(_,[],_).
@@ -113,12 +112,12 @@ ensure_slots([], _).
 ensure_slots([SLOT|SLOTS], HOLIDAY):-
     SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _),
     (
-        (HOLIDAY #= 1, NUM in 5..29);
-        (HOLIDAY #= 6, NUM in 0..24);
-        (HOLIDAY #= 2, NUM in 0..4\/10..29);
-        (HOLIDAY #= 3, NUM in 0..9\/15..29);
-        (HOLIDAY #= 4, NUM in 0..14\/20..29);
-        (HOLIDAY #= 5, NUM in 0..19\/25..29)
+        (HOLIDAY #= 0, NUM in 5..29);
+        (HOLIDAY #= 5, NUM in 0..24);
+        (HOLIDAY #= 1, NUM in 0..4\/10..29);
+        (HOLIDAY #= 2, NUM in 0..9\/15..29);
+        (HOLIDAY #= 3, NUM in 0..14\/20..29);
+        (HOLIDAY #= 4, NUM in 0..19\/25..29)
     ),
     nonvar(SUBJECT),
     nonvar(TYPE),
