@@ -1,5 +1,5 @@
 :- use_module(library(clpfd)).
-
+:- include('util.pl').
 % A SLOT is to be assigned to a LOCATION and a NUM (if possible), Or it cannot exist
 % 
 % VARIABLES:
@@ -36,7 +36,7 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % No slot at the same location at the same time
     % Ensure allocation of resources
     ensure_allocation(SLOTS),
-    % TODO Ensure allocation all_different per slot
+    check_all_slots_diffLocations(SLOTS),
     print("ALLOCATION ENSURED"), nl,
     
     % (TIMING, SUBGROUP)

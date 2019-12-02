@@ -27,6 +27,7 @@ check_all_slots_rec(N, SLOTS):-
     once(extract_slots(N , SLOTS, L)),
     all_different(L),
     N1 is N - 1, 
+    print(N1),print(' '),
     check_all_slots_rec(N1, SLOTS).
     
 
