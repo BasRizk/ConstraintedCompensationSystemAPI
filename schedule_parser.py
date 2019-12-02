@@ -5,7 +5,9 @@ import pandas as pd
 def clean_rows(schedule):
     schedule = schedule.dropna(how="all", subset=headers[1:])
     schedule = schedule.apply(lambda x: x.astype(str).str.lower())
-    list_of_dumb = ["rooms", "large lecture halls", "small lecture halls", "cs labs", "1architecture"]
+    list_of_dumb = ["rooms", "large lecture halls", "small lecture halls", "cs labs",
+                    "1architecture", "1Engineering I", "1Engineering II",
+                    "1Engineering III", "1Engineering IV"]
     for to_dumb in list_of_dumb:
         schedule =\
             schedule[schedule["GROUP"] != to_dumb]
@@ -71,7 +73,7 @@ import re
 def is_tut(title):
     # TODO let tut only be csen as it seems to be csen101    
     matches = re.search("^([a-z&. ]+)(tut)?[ ]*[t]?(\d+[,\d]*)[ \S]*$", title)
-    if matches:
+    if matches:        
         return ("tut", matches[1], matches[3].split(","))
     # Special case ex. 2 tut
     matches = re.search("^(\d+)*[ ]*([a-z]+)(,[\S ]*)?$", title)
@@ -154,6 +156,10 @@ def listify_a_slot(time, day, group, title, available_locations):
         allocate_slot(slot_type, available_locations)
     all_slots = []
     for subgroup in subgroups:
+        if slot_type == "lec":
+            subgroup = group + slot_subject
+        else:
+            subgroup = slot_subject + subgroup
         slot_formatted =\
             (slot_num, slot_subject, slot_type, group, subgroup, location)
         all_slots.append(slot_formatted)
@@ -246,8 +252,70 @@ def listify_on_own(slots, subjects = True, groups = True, subgroups = True):
         
     return list(all_subjects), list(all_groups), list(all_subgroups)
 
+def digitize(slots):
+    digi_slots = []
+    
+    types_dict = {
+            "big_lec":1,
+            "small_lec":2,
+            "tut":3,
+            "lab":4
+            }
+    
+    # has to begin with 1 to avoid not(0)    
+    subjects_dict = {}
+    subject_current_num = 1
+    groups_dict = {}
+    group_current_num = 1
+    subgroups_dict = {}
+    subgroup_current_num = 1
+    
+    for (_, subject, _, group, subgroup, _) in slots:
+        if not(subjects_dict.get(subject)):
+            subjects_dict[subject] = subject_current_num
+            subject_current_num += 1
+        if not(groups_dict.get(group)):
+            groups_dict[group] = group_current_num
+            group_current_num += 1
+        if not(subgroups_dict.get(subgroup)):
+            subgroups_dict[subgroup] = subgroup_current_num
+            subgroup_current_num += 1
+            
+    for (num, subject, slot_type, group, subgroup, num) in slots:
+        digi_subject = subjects_dict.get(subject)
+        digi_group = groups_dict.get(group)
+        digi_type = types_dict.get(slot_type)
+        digi_subgroup = subgroups_dict.get(subgroup)
+        if not(digi_subject):
+            print("Subject " + subject + " does not exist.")
+        if not(digi_group):
+            print("Group " + group + " does not exist.")
+        if not(digi_type):
+            print("Type " + slot_type + " does not exist.")
+        if not(digi_subgroup):
+            print("Subgroup " + subgroup + " does not exist.")
+            
+        slot = (num, digi_subject, digi_type, digi_group, digi_subgroup, num)
+        digi_slots.append(slot)
+    
+    return digi_slots
+    
+    
+
 days_schedules = extract_days(schedule_file)
 all_slots = listify_slots(days_schedules)
 all_slots = clean_formatted_slots(all_slots)
+all_slots = digitize(all_slots)
 #compensation_slot = ()
 query = create_query(all_slots)
+#
+with open("query_example.txt", "w") as f:
+    query_rest = query
+    while(True):
+        limit = 1000
+        if len(query_rest) < limit:
+            break
+        f.write(query_rest[:limit])
+        f.write("\n")
+        query_rest = query_rest[limit:]
+    f.write(query_rest)
