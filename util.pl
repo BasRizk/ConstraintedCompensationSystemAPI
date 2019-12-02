@@ -18,22 +18,19 @@
 
 %     % print(L)
 
-check_all_slots(SLOTS):-
-    check_all_slots_rec(30, SLOTS).
+check_all_slots_diffLocations(SLOTS):-
+    once(check_all_slots_rec(30, SLOTS)).  
 
-check_all_slots_rec(0, SLOTS):-
-    extract_slots(0 , SLOTS, L),
-    all_distinct(L).
-    
-
+check_all_slots_rec(-1,_).
 check_all_slots_rec(N, SLOTS):-
-    extract_slots(N , SLOTS, L),
+    N #>= 0,
+    once(extract_slots(N , SLOTS, L)),
     all_different(L),
-    N1 #= N - 1, 
+    N1 is N - 1, 
     check_all_slots_rec(N1, SLOTS).
     
 
-extract_slots(_, [] ,_).
+extract_slots(_, [] ,[]).
 
 extract_slots(N, [SLOT|SLOTS], L):-
     SLOT = (NUM,_,_,_,_,LOCATION),
