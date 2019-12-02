@@ -150,12 +150,14 @@ def allocate_slot(slot_type, available_locations):
     elif("lec" in slot_type):
         loc_i = 1
         offset = 50
-        
+#    print(slot_type)
     if available_locations[loc_i] > 0:
         location = offset + available_locations[loc_i] - 1
         available_locations[loc_i] -= 1
+#        print(location)
     else:
-        print("ERROR: allocation")
+        print("ERROR: allocation of type " + slot_type)
+        print("Available locations: " + str(available_locations))
         
     return location, available_locations     
 
@@ -164,14 +166,18 @@ def listify_a_slot(time, day, group, title, available_locations):
     day_num = sheet_names.index(day)
     slot_num = (time_num - 1) + (day_num*5)
     slot_type, slot_subject, subgroups = get_slot_specific_info(title)
-    location, available_locations =\
-        allocate_slot(slot_type, available_locations)
+
     all_slots = []
     for subgroup in subgroups:
         if "lec" in slot_type:
             subgroup = group
         else:
             subgroup = group + " " + subgroup
+        
+        location, available_locations =\
+            allocate_slot(slot_type, available_locations)
+#        if slot_type == "lab":
+#            print(str(slot_num) + title)
         slot_formatted =\
             (slot_num, slot_subject, slot_type, group, subgroup, location)
 #        if slot_num == 11:
@@ -185,8 +191,8 @@ def listify_slots(extracted_schedule):
         day_schedule = extracted_schedule[day]
         for group in day_schedule.keys():
             group_day = day_schedule[group]
-            available_locations = [50, 5, 1, 8]
             for time in headers[1:]:
+                available_locations = [50, 5, 1, 8]
                 slot_contents = group_day[time]
                 for title in slot_contents:
                     if title == "nan" or title == "free":
@@ -196,4 +202,5 @@ def listify_slots(extracted_schedule):
                                        available_locations)
                     for slot in slots:
                         list_of_formatted_slots.append(slot)
+#            print(available_locations)
     return list_of_formatted_slots   
