@@ -4,8 +4,8 @@ import re
           
 def clean_subject(subject):
     subject = subject.strip()
-    subject = subject.strip("tut").strip().strip("t").strip()
-    subject = subject.strip("lab").strip().strip("l").strip()
+    subject = subject.rstrip("tut").strip().rstrip("t").strip()
+    subject = subject.rstrip("lab").strip().rstrip("l").strip()
     return subject
 
 def clean_formatted_slots(formatted_slots):
@@ -19,12 +19,12 @@ def clean_formatted_slots(formatted_slots):
 def digitize(slots):
     digi_slots = []
     
-    types_dict = {
-            "big_lec":1,
-            "small_lec":2,
-            "tut":3,
-            "lab":4
-            }
+#    types_dict = {
+#            "big_lec":1,
+#            "small_lec":2,
+#            "tut":3,
+#            "lab":4
+#            }
     
     # has to begin with 1 to avoid not(0)    
     subjects_dict = {}
@@ -46,20 +46,21 @@ def digitize(slots):
             subgroup_current_num += 1
             
     for (num, subject, slot_type, group, subgroup, location) in slots:
+#        if num == 27:
+#            print(str(num) + " " + slot_type + " " + group + " " + subgroup)
         digi_subject = subjects_dict.get(subject)
         digi_group = groups_dict.get(group)
-        digi_type = types_dict.get(slot_type)
+#        digi_type = types_dict.get(slot_type)
         digi_subgroup = subgroups_dict.get(subgroup)
         if not(digi_subject):
             print("Subject " + subject + " does not exist.")
         if not(digi_group):
             print("Group " + group + " does not exist.")
-        if not(digi_type):
-            print("Type " + slot_type + " does not exist.")
+#        if not(digi_type):
+#            print("Type " + slot_type + " does not exist.")
         if not(digi_subgroup):
             print("Subgroup " + subgroup + " does not exist.")
-        print(num)
-        slot = (num, digi_subject, digi_type, digi_group, digi_subgroup, location)
+        slot = (num, digi_subject, slot_type, digi_group, digi_subgroup, location)
         digi_slots.append(slot)
     
     return digi_slots
@@ -116,6 +117,8 @@ all_slots = digitize(all_slots)
 #compensation_slot = ()
 query = create_query(all_slots)
 #
+
+
 with open("query_example.txt", "w") as f:
     query_rest = query
     while(True):

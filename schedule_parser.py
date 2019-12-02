@@ -3,6 +3,12 @@
 import pandas as pd
 import re
 
+list_of_ignored = ["1architecture", "1engineering i", "1engineering ii",
+    "1engineering iii", "1engineering iv", "1engineering iv",
+    "1engineering v", "1engineering vi", "1engineering vii",
+    "1engineering viii", "1engineering ix", "1engineering x",
+    "9 csen", "9 dmet"]
+    
 filename = "MET_Winter19_schedule_31131.xlsx"
 sheet_names = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
 headers = ["GROUP", "FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
@@ -16,14 +22,12 @@ def parse_schedule():
 def clean_rows(schedule):
     schedule = schedule.dropna(how="all", subset=headers[1:])
     schedule = schedule.apply(lambda x: x.astype(str).str.lower())
-    list_of_dumb = ["rooms", "large lecture halls", "small lecture halls", "cs labs",
-                    "1architecture", "1Engineering I", "1Engineering II",
-                    "1Engineering III", "1Engineering IV"]
+    list_of_dumb = ["rooms", "large lecture halls", "small lecture halls", "cs labs"]
     for to_dumb in list_of_dumb:
         schedule =\
             schedule[schedule["GROUP"] != to_dumb]
-    
     schedule = schedule[schedule["FIRST"] != "day off"]
+    schedule = schedule[schedule["FIRST"] != "free"]
     
     return schedule
 
@@ -41,6 +45,8 @@ def extract_groups(schedule):
             group_schedule =\
                 schedule[start_exist_index:end_exist_index]
         group_name = group_schedule["GROUP"].iloc[0]
+        if group_name in list_of_ignored:
+            continue
         groups_schedules[group_name] = group_schedule
     return groups_schedules
 
@@ -53,6 +59,7 @@ def extract_days(schedule):
         groups_schedules = extract_groups(day_schedule)
         days_schedules[day_name] = groups_schedules
     return days_schedules
+
 # =============================================================================
 #  EXTRACT ACCORDING TO SLOTS IN THE PROLOG SCHEDULER FILE FORMAT
 #       (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, LOCATION)
@@ -81,7 +88,6 @@ def extract_days(schedule):
 
 # RETURNED FORMAT (TYPE, SUBJECT, SUBGROUPS)
 def is_tut(title):
-    # TODO let tut only be csen as it seems to be csen101    
     matches = re.search("^([a-z&. ]+)(tut)?[ ]*[t]?(\d+[,\d]*)[ \S]*$", title)
     if matches:        
         return ("tut", matches[1], matches[3].split(","))
@@ -89,21 +95,21 @@ def is_tut(title):
     matches = re.search("^(\d+)*[ ]*([a-z]+)(,[\S ]*)?$", title)
     if matches:
         if matches[2] == "tut":
-            return ("tut", "csenarch", matches[1].split(","))
+            return ("tut", "csen101arch", matches[1].split(","))
         else:
     #        print("another type of tut")
             return ("tut", matches[2], matches[1].split(","))
     return None
 
 def is_lab(title):
-    matches = re.search("^([a-z. ]+)( lab )(\d+[,\/\d]*)$", title)
+    matches = re.search("^([a-z. ]+)(lab|l)[ ]*(\d+[,\/\d]*)$", title)
     if matches:
         return ("lab", matches[1], re.split("[,\/]+", matches[3]))
-    matches = re.search("^([a-z ]+)( l )(\d+[,\d]*)$", title)
-    if matches:
-#        print("another_type_of_lab")
-#        print(matches[0])
-        return ("lab", matches[1], matches[3].split(","))
+#    matches = re.search("^([a-z ]+)( l )(\d+[,\d]*)$", title)
+#    if matches:
+##        print("another_type_of_lab")
+##        print(matches[0])
+#        return ("lab", matches[1], matches[3].split(","))
     return None
 
 def is_lec(title):
@@ -115,7 +121,7 @@ def is_lec(title):
         # Not named lecture       
         return ("small_lec", matches[2], matches[2].split(","))
     # Special case ex.  'what-ever lec[ ]?((room))?'
-    matches = re.search("^([a-z&\- ]*)lec[ ]?(\(room\))?$$", title) 
+    matches = re.search("^([a-z&\- ]*)lec[ ]?(\(room\))?$", title) 
     if matches:
         return ("small_lec", matches[1], matches[1].split(","))
 
@@ -166,12 +172,14 @@ def listify_a_slot(time, day, group, title, available_locations):
         allocate_slot(slot_type, available_locations)
     all_slots = []
     for subgroup in subgroups:
-        if slot_type == "lec":
-            subgroup = group + slot_subject
+        if "lec" in slot_type:
+            subgroup = group
         else:
-            subgroup = slot_subject + subgroup
+            subgroup = group + " " + subgroup
         slot_formatted =\
             (slot_num, slot_subject, slot_type, group, subgroup, location)
+#        if slot_num == 11:
+#            print(str(slot_num)+","+slot_subject+","+slot_type+","+group+","+subgroup)
         all_slots.append(slot_formatted)
     return all_slots, available_locations
 
