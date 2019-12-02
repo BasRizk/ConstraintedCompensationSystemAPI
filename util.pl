@@ -2,18 +2,50 @@
 
 
 
-split_list([],_).
+% split_list([],_).
 
-split_list([SLOT|SLOTS], L):-
-    SLOT = (NUM,_),
-    NUM in 0..29,
-    NUM_INDEX is NUM + 1,
-    length(L, 30),    
-    nth1(NUM_INDEX, L , SLOT_LIST),
-    % print(NUM),print(' '),print(SLOT_LIST),nl,
+% split_list([SLOT|SLOTS], L):-
+%     SLOT = (NUM,_),
+%     NUM in 0..29,
+%     NUM_INDEX is NUM + 1,
+%     length(L, 30),    
+%     nth1(NUM_INDEX, L , SLOT_LIST),
+%     % print(NUM),print(' '),print(SLOT_LIST),nl,
     
-    append(SLOT_LIST, [SLOT], SLOT_LIST_2),
-    nth1(NUM_INDEX, L , SLOT_LIST_2),
-    split_list(SLOTS, L).
+%     append(SLOT_LIST, [SLOT], SLOT_LIST_2),
+%     nth1(NUM_INDEX, L , SLOT_LIST_2),
+%     split_list(SLOTS, L).
 
-    % print(L)
+%     % print(L)
+
+check_all_slots(SLOTS):-
+    check_all_slots_rec(2, SLOTS).
+
+check_all_slots_rec(0, SLOTS):-
+    extract_slots(0 , SLOTS, L),
+    all_distinct(L).
+    
+
+check_all_slots_rec(N, SLOTS):-
+    extract_slots(N , SLOTS, L),
+    all_different(L),
+    N1 is N - 1, 
+    check_all_slots_rec(N1, SLOTS).
+    
+
+extract_slots(_, [] ,_).
+
+extract_slots(N, [SLOT|SLOTS], L):-
+    SLOT = (NUM,_,_,_,_,_),
+    NUM in 0..29,
+    NUM #= N, 
+    extract_slots(N, SLOTS, L1),
+    append(L1, [SLOT], L).    
+
+extract_slots(N, [SLOT|SLOTS], L):-
+    SLOT = (NUM,_,_,_,_,_),
+    NUM in 0..29,
+    NUM #\= N, 
+    extract_slots(N, SLOTS, L).
+
+
