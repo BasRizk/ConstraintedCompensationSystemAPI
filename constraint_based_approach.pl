@@ -113,12 +113,12 @@ ensure_slots([], _).
 ensure_slots([SLOT|SLOTS], HOLIDAY):-
     SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _),
     (
-        (HOLIDAY #= 1, NUM in 5..29);
-        (HOLIDAY #= 6, NUM in 0..24);
-        (HOLIDAY #= 2, NUM in 0..4\/10..29);
-        (HOLIDAY #= 3, NUM in 0..9\/15..29);
-        (HOLIDAY #= 4, NUM in 0..14\/20..29);
-        (HOLIDAY #= 5, NUM in 0..19\/25..29)
+        (HOLIDAY #= 0, NUM in 5..29);
+        (HOLIDAY #= 5, NUM in 0..24);
+        (HOLIDAY #= 1, NUM in 0..4\/10..29);
+        (HOLIDAY #= 2, NUM in 0..9\/15..29);
+        (HOLIDAY #= 3, NUM in 0..14\/20..29);
+        (HOLIDAY #= 4, NUM in 0..19\/25..29)
     ),
     nonvar(SUBJECT),
     nonvar(TYPE),
