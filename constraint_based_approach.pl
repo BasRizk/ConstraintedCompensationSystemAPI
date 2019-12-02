@@ -67,7 +67,7 @@ ensure_allocation([SLOT|SLOTS]):-
 
 ensure_allocation([SLOT|SLOTS]):-
     % POSSIBLE ANSWER ALSO
-    SLOT = (_, _, TYPE, _, LOCATION),
+    SLOT = (_, _, TYPE, _, _, LOCATION),
     (
         (TYPE = small_lec, LOCATION in 50..55);
         (TYPE = tut, LOCATION in 0..63)
