@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 """
+This files makes up the main point of the backend of the system
+
 Created on Tue Dec  3 18:02:46 2019
 
-@author: Basem Rizk
+@authors: Basem Rizk, Ibram Medhat, Steven Nassef
 """
 
-from schedule_parser import parse_schedule, listify_slots
+from schedule_parser import Schedule_Parser
 from query_creator import clean_formatted_slots, digitize
 from query_creator import get_random_slot_to_compensate, create_query
 
-days_schedules, sheet_names, headers = parse_schedule()
-all_slots = listify_slots(days_schedules)
+parser = Schedule_Parser()
+days_schedules, sheet_names, headers = parser.parse_schedule()
+all_slots = parser.listify_slots(days_schedules)
 all_slots = clean_formatted_slots(all_slots)
 all_slots = digitize(all_slots)
 compensation_slot = get_random_slot_to_compensate(all_slots)
