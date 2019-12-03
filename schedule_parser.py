@@ -3,7 +3,7 @@
 import pandas as pd
 import re
 
-class Schedule_Parser:
+class ScheduleParser:
 
     def __init__(self,
                  filename = "MET_Winter19_schedule_31131.xlsx",
