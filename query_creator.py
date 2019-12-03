@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from schedule_parser import parse_schedule, listify_slots
 import re
           
 def clean_subject(subject):
@@ -135,22 +134,13 @@ def get_random_slot_to_compensate(slots, holiday = 0):
             slot_string = convert_to_query_format(turn_to_variable_slot(slot))
             return slot_string, subject, subgroup 
         
-days_schedules, sheet_names, headers = parse_schedule()
-all_slots = listify_slots(days_schedules)
-all_slots = clean_formatted_slots(all_slots)
-all_slots = digitize(all_slots)
-compensation_slot = get_random_slot_to_compensate(all_slots)
-query = create_query(all_slots, compensation_slot)
-#
-
-
-with open("query_example.txt", "w") as f:
-    query_rest = query
-    while(True):
-        limit = 1000
-        if len(query_rest) < limit:
-            break
-        f.write(query_rest[:limit])
-        f.write("\n")
-        query_rest = query_rest[limit:]
-    f.write(query_rest)
+#with open("query_example.txt", "w") as f:
+#    query_rest = query_statement
+#    while(True):
+#        limit = 1000
+#        if len(query_rest) < limit:
+#            break
+#        f.write(query_rest[:limit])
+#        f.write("\n")
+#        query_rest = query_rest[limit:]
+#    f.write(query_rest)
