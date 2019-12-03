@@ -35,20 +35,21 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % => The schedules of the rooms. A room can not be assigned to multiple meetings at the same time.
     % No slot at the same location at the same time
     % Ensure allocation of resources
-    ensure_allocation(SLOTS),
+    % TODO minimize LOCATION_TOTAL_COST, when trying to label later
     check_all_slots_diffLocations(SLOTS),
+    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
     print("ALLOCATION ENSURED"), nl,
     
-    % % (TIMING, SUBGROUP)
-    % % No subgroup have more than one slot at the same time
-    % % Implicitly no lecture at the same time of corresponding tut. ensured
-    chain_per_subgroup(SLOTS, SUBGROUPS),
-    print("CHAINED PER SUBGROUPS ENSURED"), nl,
+    % (TIMING, SUBGROUP)
+    % No subgroup have more than one slot at the same time
+    % Implicitly no lecture at the same time of corresponding tut. ensured
+    serialize_subgroups(SLOTS, SUBGROUPS),
+    print("SUBGROUPS SERIALIZED"), nl,
 
-    % % % (TIMING, SUBJECT, TYPE, GROUP)
-    % % % No more than one lec given to the same group at the same time
-    chain_lec_per_group(SLOTS, GROUPS),
-    print("CHAINED LEC PER GROUP SAME SUBJECT ENSURED"), nl.
+    % (TIMING, TYPE, GROUP)
+    % No more than one lec given to the same group at the same time
+    serialize_lecs_per_group(SLOTS, GROUPS),
+    print("LEC SERIALIZED PER EACH GROUP"), nl.
 
 
 /**
@@ -56,29 +57,25 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
  * 1. Meeting types -- Assign TYPE LAB to lab resource only
  * 2. Room Type Optimization -- Prioritize usage of non-labs to non-labs
  * LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs 
- * TODO make cost function, worse only for possible not prioritized 
  */
-ensure_allocation([]).
-ensure_allocation([SLOT|SLOTS]):-
-    % PRIORITIZED OPTIMAL SOLUTION
+location_cost(lab, LOCATION, COST):-
+    (LOCATION in 56..63, COST #= 1);
+    (LOCATION in 0..49, COST #= 2).
+location_cost(tut, LOCATION, COST):-
+    (LOCATION in 0..49, COST #= 1);
+    (LOCATION in 56..63, COST #= 2).
+location_cost(small_lec, LOCATION, COST):-
+    (LOCATION in 55..55, COST #= 1);
+    (LOCATION in 50..54, COST #= 2).
+location_cost(big_lec, LOCATION, 1):-
+    LOCATION in 50..54.
+
+ensure_allocation([], 0).
+ensure_allocation([SLOT|SLOTS], TOTAL_COST):-
+    TOTAL_COST #= (OLD_COST + SINGLE_COST),
+    ensure_allocation(SLOTS, OLD_COST),
     SLOT = (_, _, TYPE, _, _, LOCATION),
-    (
-        (TYPE = lab, LOCATION in 56..63);
-        (TYPE = big_lec, LOCATION in 50..54);
-        (TYPE = small_lec, LOCATION in 55..55);
-        (TYPE = tut, LOCATION in 0..49)
-    ),
-    ensure_allocation(SLOTS).
-ensure_allocation([SLOT|SLOTS]):-
-    % POSSIBLE ANSWER ALSO
-    SLOT = (_, _, TYPE, _, _, LOCATION),
-    (
-        (TYPE = small_lec, LOCATION in 50..55);
-        (TYPE = tut, LOCATION in 0..63);
-        % TODO DELETE
-        (TYPE = lab, LOCATION in 0..49)
-    ),
-    ensure_allocation(SLOTS).
+    location_cost(TYPE, LOCATION, SINGLE_COST).
 
 /**
  * Return list of ones of equal length
@@ -88,34 +85,37 @@ corresponding_list_of_ones([_|Xs], [1|ONES]):-
     corresponding_list_of_ones(Xs, ONES).
 
 /**
- * Chain lectures of the same group for each group
+ * Serialize lectures for each group
  * 
  */
-chain_lec_per_group(_,[]).
-chain_lec_per_group(SLOTS, [GROUP|GROUPS]):-
-    list_lec_group_timings(SLOTS, GROUP, TIMINGS_LIST),
-    corresponding_list_of_ones(TIMINGS_LIST, ONES), serialized(TIMINGS_LIST, ONES),
-    chain_lec_per_group(SLOTS, GROUPS).
+serialize_lecs_per_group(_,[]).
+serialize_lecs_per_group(SLOTS, [GROUP|GROUPS]):-
+    serialize_lecs_per_group(SLOTS, GROUPS),
+    % Once as there are two many possiblities of the same permutation of the timing_list
+    % because of - TYPE does not equal or group does not equal - line
+    once(list_lec_group_timings(SLOTS, GROUP, TIMINGS_LIST)),
+    corresponding_list_of_ones(TIMINGS_LIST, ONES),
+    serialized(TIMINGS_LIST, ONES).
 
 list_lec_group_timings([],_,[]).
 list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, TIMINGS_LIST):-
+    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
     SLOT = (_, _, TYPE, GROUP, _, _),
-    (TYPE \= small_lec; TYPE \= big_lec; GROUP \= TARGET_GROUP),
-    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST).
+    (TYPE \= small_lec; TYPE \= big_lec; GROUP \= TARGET_GROUP).
 list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
+    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
     SLOT = (TIME, _, TYPE, TARGET_GROUP, _, _),
-    (TYPE = small_lec; TYPE = big_lec),
-    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST).
-
+    (TYPE = small_lec; TYPE = big_lec).
 
 /**
- * Chain all types of slots for each subgroup
+ * Serialize all types of slots for each subgroup
  */
-chain_per_subgroup(_,[]).
-chain_per_subgroup(SLOTS, [SUBGROUP|SUBGROUPS]):-
+serialize_subgroups(_,[]).
+serialize_subgroups(SLOTS, [SUBGROUP|SUBGROUPS]):-
+    serialize_subgroups(SLOTS, SUBGROUPS),
     list_subgroup_timings(SLOTS, SUBGROUP, TIMINGS_LIST),
-    corresponding_list_of_ones(TIMINGS_LIST, ONES), serialized(TIMINGS_LIST, ONES),
-    chain_per_subgroup(SLOTS, SUBGROUPS).
+    corresponding_list_of_ones(TIMINGS_LIST, ONES),
+    serialized(TIMINGS_LIST, ONES).
 
 list_subgroup_timings([],_,[]).
 list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, TIMINGS_LIST):-
@@ -147,24 +147,6 @@ ensure_slots([SLOT|SLOTS], HOLIDAY):-
     nonvar(GROUP),
     nonvar(SUBGROUP),
     ensure_slots(SLOTS, HOLIDAY).
-   
-% set_tasks_per_group(_,[],[]).
-% set_tasks_per_group(SLOTS, [GROUP|GROUPS], [TASKS|LIST_OF_TASKS]):-
-%     set_tasks_of_group(SLOTS, GROUP, TMP_TASKS),
-%     set_tasks_per_group(SLOTS, GROUPS, LIST_OF_TASKS).
-
-% set_tasks_of_group([],_,[]).
-% % Ignore slot if it is not from the target_group
-% set_tasks_of_group([SLOT|SLOTS], TARGET_GROUP, TASKS):-
-%     SLOT = (_, _, _, GROUP),
-%     GROUP \= TARGET_GROUP,
-%     set_tasks_of_group(SLOTS, TARGET_GROUP, TASKS).
-% % Create a task of a slot if it is of that target_group
-% set_tasks_of_group([SLOT|SLOTS], TARGET_GROUP, [TASK|TASKS]):-
-%     SLOT = (NUM, SUBJECT, TYPE, GROUP),
-%     GROUP = TARGET_GROUP,
-%     TASK = (S1, _, _, 1, _),
-%     set_tasks_of_group(SLOTS, TARGET_GROUP, TASKS).
 
 % CONSTRAINTS:
 % 
