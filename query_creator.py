@@ -68,7 +68,8 @@ def digitize(slots):
 def convert_to_query_format(string):
     return "".join(re.split("['| |\-|.|\"]",str(string)))
     
-def listify_on_own(slots, subjects = True, groups = True, subgroups = True):
+def listify_on_own(slots, subjects=True, groups=True, subgroups=True,
+                   subject_inc=None, subgroup_inc=None):
     all_subjects = set()
     all_groups = set()
     all_subgroups = set()
@@ -84,6 +85,11 @@ def listify_on_own(slots, subjects = True, groups = True, subgroups = True):
             all_groups.add(group)
         if subgroups:
             all_subgroups.add(group + subgroup)
+    
+    if subject_inc:
+        all_subjects.add(convert_to_query_format(subject_inc))
+    if subgroup_inc:
+        all_subgroups.add(convert_to_query_format(subgroup_inc))
         
     return list(all_subjects), list(all_groups), list(all_subgroups)
 
@@ -99,23 +105,42 @@ def create_query(slots, compensation_slot = None, holiday = 0):
             continue
         slots_string += convert_to_query_format(slot)
         slots_string +=  ","
-    
-    slots_string = slots_string[:-1] + "]"
-    
-    subjects, groups, subgroups = listify_on_own(slots)
+    if not(compensation_slot):
+        slots_string = slots_string[:-1] + "]"      
+        subjects, groups, subgroups = listify_on_own(slots)
+
+    else:
+        comp_slot_string,comp_subject,comp_subgroup = compensation_slot
+        slots_string += comp_slot_string + "]"
+        subjects, groups, subgroups =\
+            listify_on_own(slots,
+                           subject_inc=comp_subject,
+                           subgroup_inc=comp_subgroup)
+
     subjects = convert_to_query_format(subjects)
     groups = convert_to_query_format(groups)
     subgroups = convert_to_query_format(subgroups)
-    
     return "schedule(%s,%s,%s,%s,%s)" %\
          (slots_string, str(holiday), subjects, groups, subgroups)
 
+def turn_to_variable_slot(slot):
+    _,subject,slot_type,group,subgroup,_=slot
+    return ("NUM",subject,slot_type,group,subgroup,"LOCATION")
+def get_random_slot_to_compensate(slots, holiday = 0):
+    first_slot_in_holiday = holiday*5
+    last_slot_in_holiday = (holiday*5) + 4
+    for slot in slots:
+        slot_num,subject,_,_,subgroup,_=slot
+        if (slot_num >= first_slot_in_holiday) and (slot_num <= last_slot_in_holiday):
+            slot_string = convert_to_query_format(turn_to_variable_slot(slot))
+            return slot_string, subject, subgroup 
+        
 days_schedules, sheet_names, headers = parse_schedule()
 all_slots = listify_slots(days_schedules)
 all_slots = clean_formatted_slots(all_slots)
 all_slots = digitize(all_slots)
-#compensation_slot = ()
-query = create_query(all_slots)
+compensation_slot = get_random_slot_to_compensate(all_slots)
+query = create_query(all_slots, compensation_slot)
 #
 
 

@@ -55,7 +55,8 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
  * Ensure allocation
  * 1. Meeting types -- Assign TYPE LAB to lab resource only
  * 2. Room Type Optimization -- Prioritize usage of non-labs to non-labs
- * LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs  
+ * LOCATION: {0..63}, where 0..49 Rooms, 50..54 Large Halls, 55..55 Small Hall, 56..63 Labs 
+ * TODO make cost function, worse only for possible not prioritized 
  */
 ensure_allocation([]).
 ensure_allocation([SLOT|SLOTS]):-
