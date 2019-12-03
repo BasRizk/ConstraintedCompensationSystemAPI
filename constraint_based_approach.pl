@@ -39,14 +39,14 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     check_all_slots_diffLocations(SLOTS),
     print("ALLOCATION ENSURED"), nl,
     
-    % (TIMING, SUBGROUP)
-    % No subgroup have more than one slot at the same time
-    % Implicitly no lecture at the same time of corresponding tut. ensured
+    % % (TIMING, SUBGROUP)
+    % % No subgroup have more than one slot at the same time
+    % % Implicitly no lecture at the same time of corresponding tut. ensured
     chain_per_subgroup(SLOTS, SUBGROUPS),
     print("CHAINED PER SUBGROUPS ENSURED"), nl,
 
-    % (TIMING, SUBJECT, TYPE, GROUP)
-    % No more than one lec given to the same group at the same time
+    % % % (TIMING, SUBJECT, TYPE, GROUP)
+    % % % No more than one lec given to the same group at the same time
     chain_lec_per_group(SLOTS, GROUPS),
     print("CHAINED LEC PER GROUP SAME SUBJECT ENSURED"), nl.
 
@@ -73,9 +73,18 @@ ensure_allocation([SLOT|SLOTS]):-
     SLOT = (_, _, TYPE, _, _, LOCATION),
     (
         (TYPE = small_lec, LOCATION in 50..55);
-        (TYPE = tut, LOCATION in 0..63)
+        (TYPE = tut, LOCATION in 0..63);
+        % TODO DELETE
+        (TYPE = lab, LOCATION in 0..49)
     ),
     ensure_allocation(SLOTS).
+
+/**
+ * Return list of ones of equal length
+ */
+corresponding_list_of_ones([], []).
+corresponding_list_of_ones([_|Xs], [1|ONES]):-
+    corresponding_list_of_ones(Xs, ONES).
 
 /**
  * Chain lectures of the same group for each group
@@ -84,7 +93,7 @@ ensure_allocation([SLOT|SLOTS]):-
 chain_lec_per_group(_,[]).
 chain_lec_per_group(SLOTS, [GROUP|GROUPS]):-
     list_lec_group_timings(SLOTS, GROUP, TIMINGS_LIST),
-    chain(TIMINGS_LIST, #<),
+    corresponding_list_of_ones(TIMINGS_LIST, ONES), serialized(TIMINGS_LIST, ONES),
     chain_lec_per_group(SLOTS, GROUPS).
 
 list_lec_group_timings([],_,[]).
@@ -104,7 +113,7 @@ list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
 chain_per_subgroup(_,[]).
 chain_per_subgroup(SLOTS, [SUBGROUP|SUBGROUPS]):-
     list_subgroup_timings(SLOTS, SUBGROUP, TIMINGS_LIST),
-    chain(TIMINGS_LIST, #<),
+    corresponding_list_of_ones(TIMINGS_LIST, ONES), serialized(TIMINGS_LIST, ONES),
     chain_per_subgroup(SLOTS, SUBGROUPS).
 
 list_subgroup_timings([],_,[]).

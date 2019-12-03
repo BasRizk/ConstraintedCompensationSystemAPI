@@ -100,7 +100,9 @@ def is_tut(title):
 def is_lab(title):
     matches = re.search("^([a-z. ]+)(lab|l)[ ]*(\d+[,\/\d]*)$", title)
     if matches:
+#        return ("lab", matches[1], re.split("[,\/]+", matches[3]))
         return ("lab", matches[1], re.split("[,\/]+", matches[3]))
+
 #    matches = re.search("^([a-z ]+)( l )(\d+[,\d]*)$", title)
 #    if matches:
 ##        print("another_type_of_lab")
@@ -155,10 +157,21 @@ def allocate_slot(slot_type, available_locations):
         location = offset + available_locations[loc_i] - 1
         available_locations[loc_i] -= 1
 #        print(location)
+    elif ("lec" in slot_type):
+        loc_i = 2
+        offset = 55
+        if (available_locations[loc_i] > 0):
+            location = offset + available_locations[loc_i] - 1
+            available_locations[loc_i] -= 1
+    elif ("lab" in slot_type):
+        loc_i = 1
+        offset = 0
+        if (available_locations[loc_i] > 0):
+            location = offset + available_locations[loc_i] - 1
+            available_locations[loc_i] -= 1
     else:
         print("ERROR: allocation of type " + slot_type)
         print("Available locations: " + str(available_locations))
-        
     return location, available_locations     
 
 def listify_a_slot(time, day, group, title, available_locations):
@@ -174,32 +187,41 @@ def listify_a_slot(time, day, group, title, available_locations):
         else:
             subgroup = group + " " + subgroup
         
+#        if "lec" in slot_type and slot_num == 6:
+#            print(str(slot_num) + " " + title)
+#            print(str(slot_num) + " " + str(available_locations))
         location, available_locations =\
             allocate_slot(slot_type, available_locations)
-#        if slot_type == "lab":
-#            print(str(slot_num) + title)
+            
         slot_formatted =\
             (slot_num, slot_subject, slot_type, group, subgroup, location)
-#        if slot_num == 11:
-#            print(str(slot_num)+","+slot_subject+","+slot_type+","+group+","+subgroup)
+#        if slot_num == 6 and "lec" in slot_type:
+#            print(str(slot_num)+","+slot_subject+","+slot_type+","+group+","+subgroup + "," + str(location))
         all_slots.append(slot_formatted)
+        
     return all_slots, available_locations
+
+def define_available_locations():
+    all_available_locations = {}
+    for time in headers[1:]:
+        all_available_locations[time] = [50, 5, 1, 8]
+    return all_available_locations
 
 def listify_slots(extracted_schedule):
     list_of_formatted_slots = []
     for day in sheet_names:
+        all_available_locations = define_available_locations()
         day_schedule = extracted_schedule[day]
         for group in day_schedule.keys():
             group_day = day_schedule[group]
             for time in headers[1:]:
-                available_locations = [50, 5, 1, 8]
                 slot_contents = group_day[time]
                 for title in slot_contents:
                     if title == "nan" or title == "free":
                         continue
-                    slots, available_locations =\
+                    slots, all_available_locations[time] =\
                         listify_a_slot(time, day, group, title,
-                                       available_locations)
+                                       all_available_locations[time])
                     for slot in slots:
                         list_of_formatted_slots.append(slot)
 #            print(available_locations)

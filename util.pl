@@ -19,35 +19,35 @@
 %     % print(L)
 
 check_all_slots_diffLocations(SLOTS):-
-    once(check_all_slots_rec(30, SLOTS)).  
+    check_all_slots_rec(29, SLOTS).  
 
 check_all_slots_rec(-1,_).
-check_all_slots_rec(N, SLOTS):-
-    N #>= 0,
-    once(extract_slots(N , SLOTS, L)),
-    all_different(L),
-    N1 is N - 1, 
-    print(N1),print(' '),
-    check_all_slots_rec(N1, SLOTS).
-    
+check_all_slots_rec(NUM, SLOTS):-
+    NUM >= 0,
+    extract_slots(NUM , SLOTS, LOCATIONS),
+    % print("pass "), print(NUM), nl,
+    % print(LOCATIONS), nl,
+    all_different(LOCATIONS),
+    NEW_NUM #= NUM - 1, 
+    check_all_slots_rec(NEW_NUM, SLOTS).
 
+% 28,19,lab,12,75,58
+% 28,10,lab,17,101,58
 extract_slots(_, [] ,[]).
-
-extract_slots(N, [SLOT|SLOTS], L):-
-    SLOT = (NUM,_,_,_,_,LOCATION),
-    NUM in 0..29,
-    NUM #= N, 
-    extract_slots(N, SLOTS, L1),
-    append(L1, [LOCATION], L).    
-
-extract_slots(N, [SLOT|SLOTS], L):-
-    SLOT = (NUM,_,_,_,_,_),
-    NUM in 0..29,
-    NUM #\= N, 
-    extract_slots(N, SLOTS, L).
+extract_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
+    SLOT = (NUM,_,_,_,_,LOCATION), 
+    NUM #= TARGET_NUM,
+    % print(SLOT), nl,
+    % print("MATCHED"), nl,
+    extract_slots(TARGET_NUM, SLOTS, LOCATIONS).
+extract_slots(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
+    SLOT = (ANOTHER_NUM,_,_,_,_,_),
+    ANOTHER_NUM #\= TARGET_NUM,
+    % print("not"), nl, print(TARGET_NUM), nl, print(ANOTHER_NUM), nl,
+    extract_slots(TARGET_NUM, SLOTS, LOCATIONS).
 
 
-test(L):-
-    once(extract_slots(4, L , L1)),
-    all_distinct(L1).
+% test(L):-
+%     once(extract_slots(4, L , L1)),
+%     all_distinct(L1).
     
