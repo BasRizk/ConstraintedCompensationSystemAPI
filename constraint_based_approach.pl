@@ -1,5 +1,4 @@
 :- use_module(library(clpfd)).
-:- include('util.pl').
 % A SLOT is to be assigned to a LOCATION and a NUM (if possible), Or it cannot exist
 % 
 % VARIABLES:
@@ -22,6 +21,8 @@
 % CONSTRAINTS: DOWN BELOW  ||
 %                          \/
 % 
+% TODO minimize LOCATION_TOTAL_COST, when trying to label later
+
 
 schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
@@ -35,8 +36,7 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % => The schedules of the rooms. A room can not be assigned to multiple meetings at the same time.
     % No slot at the same location at the same time
     % Ensure allocation of resources
-    % TODO minimize LOCATION_TOTAL_COST, when trying to label later
-    check_all_slots_diffLocations(SLOTS),
+    no_slots_at_same_location(SLOTS),
     ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
     print("ALLOCATION ENSURED"), nl,
     
@@ -51,6 +51,51 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     serialize_lecs_per_group(SLOTS, GROUPS),
     print("LEC SERIALIZED PER EACH GROUP"), nl.
 
+
+
+/**
+ * Ensure slots structure, and NUM of slot validity
+ */
+ensure_slots([], _).
+ensure_slots([SLOT|SLOTS], HOLIDAY):-
+    SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _),
+    (
+        (HOLIDAY = 0, NUM in 5..29);
+        (HOLIDAY = 5, NUM in 0..24);
+        (HOLIDAY = 1, NUM in 0..4\/10..29);
+        (HOLIDAY = 2, NUM in 0..9\/15..29);
+        (HOLIDAY = 3, NUM in 0..14\/20..29);
+        (HOLIDAY = 4, NUM in 0..19\/25..29)
+    ),
+    nonvar(SUBJECT),
+    nonvar(TYPE),
+    nonvar(GROUP),
+    nonvar(SUBGROUP),
+    ensure_slots(SLOTS, HOLIDAY).
+
+/**
+ * No two slots at the same time placed the same location
+ */
+no_slots_at_same_location(SLOTS):-
+    all_different_locations_per_slot(29, SLOTS).  
+
+all_different_locations_per_slot(-1,_).
+all_different_locations_per_slot(NUM, SLOTS):-
+    NUM >= 0,
+    extract_slots_same_location(NUM , SLOTS, LOCATIONS),
+    all_different(LOCATIONS),
+    NEW_NUM #= NUM - 1, 
+    all_different_locations_per_slot(NEW_NUM, SLOTS).
+
+extract_slots_same_location(_, [] ,[]).
+extract_slots_same_location(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
+    SLOT = (NUM,_,_,_,_,LOCATION), 
+    NUM #= TARGET_NUM,
+    extract_slots_same_location(TARGET_NUM, SLOTS, LOCATIONS).
+extract_slots_same_location(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
+    SLOT = (ANOTHER_NUM,_,_,_,_,_),
+    ANOTHER_NUM #\= TARGET_NUM,
+    extract_slots_same_location(TARGET_NUM, SLOTS, LOCATIONS).
 
 /**
  * Ensure allocation
@@ -86,7 +131,6 @@ corresponding_list_of_ones([_|Xs], [1|ONES]):-
 
 /**
  * Serialize lectures for each group
- * 
  */
 serialize_lecs_per_group(_,[]).
 serialize_lecs_per_group(SLOTS, [GROUP|GROUPS]):-
@@ -127,26 +171,7 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
     SLOT = (TIME, _, _, _, TARGET_SUBGROUP, _),
     list_subgroup_timings(SLOTS, TARGET_SUBGROUP, TIMINGS_LIST).
 
-/**
- * Ensure slots structure, and NUM of slot validity
- * 
- */
-ensure_slots([], _).
-ensure_slots([SLOT|SLOTS], HOLIDAY):-
-    SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _),
-    (
-        (HOLIDAY = 0, NUM in 5..29);
-        (HOLIDAY = 5, NUM in 0..24);
-        (HOLIDAY = 1, NUM in 0..4\/10..29);
-        (HOLIDAY = 2, NUM in 0..9\/15..29);
-        (HOLIDAY = 3, NUM in 0..14\/20..29);
-        (HOLIDAY = 4, NUM in 0..19\/25..29)
-    ),
-    nonvar(SUBJECT),
-    nonvar(TYPE),
-    nonvar(GROUP),
-    nonvar(SUBGROUP),
-    ensure_slots(SLOTS, HOLIDAY).
+
 
 % CONSTRAINTS:
 % 
