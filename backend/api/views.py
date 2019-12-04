@@ -17,17 +17,21 @@ class AllSlots(APIView):
         """
         Respond with all existing slots
         """
-        print("here is the request")
-        if request.body:
-            schedule_solver = ConstraintModelEngine()
-            schedule_solver.connect_schedule()
-            # slots = schedule_solver.get_group_slots(request.body["group"]) 
-            print("There is request body group parameter!")  
-        else:
-            slots = Slot.objects.all()
-            
+        slots = Slot.objects.all()    
         serializer = SlotSerializer(slots, many=True)
         return Response(serializer.data)
+
+    def post(self, request, format=None):
+        print("here is the request")
+        if request.body and request.body["group"]:
+            schedule_solver = ConstraintModelEngine()
+            schedule_solver.connect_schedule()
+            group_slots = schedule_solver.get_group_slots(request.body["group"]) 
+            print("There is request body group parameter!")
+            # TODO let serializer take care of this somehow!
+            serializer = SlotSerializer(group_slots, many=True)
+            return Response(serializer.data)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class AllGroups(APIView):
     """
@@ -77,7 +81,7 @@ class CompensateSlot(APIView):
         if serializer.is_valid():
             schedule_solver = ConstraintModelEngine()
             schedule_solver.connect_schedule()
-            to_compensate_slot = self.convert_slot_from_json(slot)
+            to_compensate_slot = self.convert_slot_from_json(to_compensate_slot)
             compensation = schedule_solver.query_model(to_compensate_slot)
             # serializer = SlotSerializer(compensation)
             return Response(compensation)
