@@ -2,18 +2,17 @@
 
 import pandas as pd
 import re
-
 class ScheduleParser:
 
     def __init__(self,
-                 filename = "MET_Winter19_schedule_31131.xlsx",
+                 filename = "api/ConstraintModel/MET_Winter19_schedule_31131.xlsx",
                  sheet_names_list =\
                      ["Saturday", "Sunday", "Monday",
                       "Tuesday", "Wednesday", "Thursday"],
                  headers_list =\
                      ["GROUP", "FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"],
                  columns_indices_to_use = [1,2,3,4,5,6],
-                 list_of_ignored = ["1architecture", "9 csen", "9 dmet"]):            
+                 list_of_ignored = ["1architecture", "9 csen", "9 dmet"]):     
         self.filename = filename
         self.sheet_names = sheet_names_list
         self.headers = headers_list

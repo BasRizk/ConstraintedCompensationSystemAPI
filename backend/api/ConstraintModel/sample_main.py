@@ -17,7 +17,7 @@ all_slots = parser.listify_slots(days_schedules)
 query_formater = QueryFormater()
 all_slots = query_formater.clean_formatted_slots(all_slots)
 all_slots = query_formater.digitize(all_slots)
-compensation_slot = query_formater.get_random_slot_to_compensate(all_slots)
+compensation_slot = query_formater.get_random_slot_to_compensate(all_slots, randomized = False)
 print("Compensation slot = " + str(compensation_slot))
 query_statement = query_formater.create_query(all_slots, compensation_slot)
 
