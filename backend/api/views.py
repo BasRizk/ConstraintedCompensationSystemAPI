@@ -1,37 +1,32 @@
-""" To turn list outputs to json for response"""
-import json
-
+"""
+API Views - Http Responses Handlers
+"""
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-# from django.http import Http404
+from django.http import Http404
 from .constraint_model_engine import ConstraintModelEngine
 from .models import Slot
 from .serializers import SlotSerializer
+from django.core.paginator import Paginator
 
 class AllSlots(APIView):
     """
     List all slots
     """
-    def get(self, request, format=None):
+    def get(self, request, group_name=None, format=None):
         """
-        Respond with all existing slots
+        Respond with all existing slots or group-specific
         """
-        slots = Slot.objects.all()    
-        serializer = SlotSerializer(slots, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, format=None):
-        print("here is the request")
-        if request.body and request.body["group"]:
-            schedule_solver = ConstraintModelEngine()
-            schedule_solver.connect_schedule()
-            group_slots = schedule_solver.get_group_slots(request.body["group"]) 
-            print("There is request body group parameter!")
-            # TODO let serializer take care of this somehow!
-            serializer = SlotSerializer(group_slots, many=True)
-            return Response(serializer.data)
+        if group_name:
+            slots = Slot.objects.filter(slot_group=group_name)\
+                            .order_by('slot_num')
+            serializer = SlotSerializer(slots, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)  
         return Response(status=status.HTTP_400_BAD_REQUEST)
+        # slots = Slot.objects.all()
+        # serializer = SlotSerializer(slots, many=True)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AllGroups(APIView):
     """
@@ -41,51 +36,49 @@ class AllGroups(APIView):
         """
         Respond with all existing slots
         """
-        schedule_solver = ConstraintModelEngine()
-        schedule_solver.connect_schedule()
-        all_groups = schedule_solver.get_all_groups()
-        all_groups_json = json.dumps(all_groups)
-        # serializer = SlotSerializer(slots, many=True)
-        return Response(all_groups_json)
+        groups = Slot.objects.order_by('slot_group').values_list('slot_group', flat=True).distinct()
+        return Response({"groups":groups}, status=status.HTTP_200_OK)
 
 
 class CompensateSlot(APIView):
     """
     Retrieve, update or delete a slot instance.
     """
-    # def get_object(self, pk):
-    #     try:
-    #         return Slot.objects.get(pk=pk)
-    #     except Slot.DoesNotExist:
-    #         raise Http404
+    def get_object(self, slot_id):
+        try:
+            return tuple(Slot.objects\
+                .values_list('slot_num',\
+                    'slot_subject',\
+                    'slot_type', 'slot_group',\
+                    'slot_subgroup', 'slot_location')\
+                        .get(pk=slot_id))
+        except Slot.DoesNotExist:
+            raise Http404
+    
+    def get_all_objects(self):
+        return tuple(Slot.objects.all()\
+            .order_by('slot_num')\
+            .values_list('slot_num',\
+                'slot_subject',\
+                'slot_type', 'slot_group',\
+                'slot_subgroup', 'slot_location'))
 
-    def convert_slot_from_json(self, slot_json):
+    def get(self, request, pk=None):
         """
-        Turn a slot json format to format that is used by ConstraintEngine
+        Get possible compensations of this slot
         """
-        num = slot_json["slot_num"]
-        subject = slot_json["slot_name"]
-        slot_type = slot_json["slot_type"]
-        group = slot_json["slot_group"]
-        subgroup = slot_json["slot_subgroup"]
-        location = slot_json["slot_location"]
-        slot_tuple = (num, subject, slot_type, group, subgroup, location)
-        return slot_tuple
+        to_compensate_slot = self.get_object(slot_id=pk)
 
-    def post(self, request):
-        """
-        Post Body containing slot to compensate
-        """
-        to_compensate_slot = request.body
-        serializer = SlotSerializer(to_compensate_slot, data=request.data)
-        if serializer.is_valid():
-            schedule_solver = ConstraintModelEngine()
-            schedule_solver.connect_schedule()
-            to_compensate_slot = self.convert_slot_from_json(to_compensate_slot)
+        if to_compensate_slot:
+            all_slots = self.get_all_objects()
+            print(all_slots)
+            schedule_solver = ConstraintModelEngine(all_slots=all_slots)
             compensation = schedule_solver.query_model(to_compensate_slot)
-            # serializer = SlotSerializer(compensation)
-            return Response(compensation)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            print(compensation)
+            return Response(compensation, status=status.HTTP_200_OK)
+
+        print("to_compensate_slot is empty")
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     # def delete(self, request, pk, format=None):
     #     slot = self.get_object(pk)

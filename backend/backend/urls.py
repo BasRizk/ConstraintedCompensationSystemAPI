@@ -16,19 +16,19 @@ Including another URLconf
 # from django.contrib import admin
 from django.urls import path
 # from rest_framework import routers
-from django.conf import settings
-from django.conf.urls.static import static
+# from django.conf import settings
+# from django.conf.urls.static import static
 from api import views
-
 # from rest_framework.urlpatterns import format_suffix_patterns
 
 urlpatterns = [
-    path('all_slots', views.AllSlots.as_view()),
-    path('group_slots', views.AllSlots.as_view()),
+    # path('all_slots', views.AllSlots.as_view()),
+    path('all_slots/<str:group_name>', views.AllSlots.as_view()),
     path('all_groups', views.AllGroups.as_view()),
-    path('compensate', views.CompensateSlot.as_view()),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
+    # path('compensate', views.CompensateSlot.as_view()),
+    path('compensate/<int:pk>', views.CompensateSlot.as_view()),
+]
+#   + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # urlpatterns = [
 #     # path('admin/', admin.site.urls),

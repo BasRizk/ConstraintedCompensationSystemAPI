@@ -3,6 +3,9 @@ from .models import Slot
 
 
 class SlotSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    DB saved slots serializer
+    """
     class Meta:
         model = Slot
         fields = ['id', 'slot_num', 'slot_subject', 'slot_type',
@@ -34,3 +37,14 @@ class SlotSerializer(serializers.HyperlinkedModelSerializer):
         instance.slot_location = validated_data.get('slot_location', instance.slot_location)
         instance.save()
         return instance
+
+# class StaticSlotSerializer(serializers.Serializer):
+#     """
+#     Excel sheet extracted slots serializer
+#     """
+#     slot_num = serializers.CharField(required=True)
+#     slot_subject = serializers.CharField(required=True, allow_blank=False)
+#     slot_type = serializers.CharField(required=True, allow_blank=False)
+#     slot_group = serializers.CharField(required=True, allow_blank=False)
+#     slot_subgroup = serializers.CharField(required=True, allow_blank=False)
+#     slot_location = serializers.CharField(required=True)

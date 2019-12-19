@@ -1,53 +1,63 @@
 """Constraint Model Engine"""
 from pyswip import Prolog
-from .ConstraintModel.schedule_parser import ScheduleParser
+# from .ConstraintModel.schedule_parser import ScheduleParser
 from .ConstraintModel.query_formater import QueryFormater
-
-
+# import os
 class ConstraintModelEngine:
     """
     Contains high level logic of preparing and quering the Prolog constraint model
     """
-    def __init__(self):
-        PL_FILENAME = "api/ConstraintModel/constraint_based_approach.pl"
-        self.parser = ScheduleParser()
+    PL_FILENAME = "api\\ConstraintModel\\constraint_based_approach.pl"
+
+    def __init__(self, all_slots=None):
+        # self.parser = ScheduleParser()
         self.query_formater = QueryFormater()
         self.prolog = Prolog()
-        # self.prolog.consult(PL_FILENAME)
-        self.days_schedules = None
-        self.all_slots = None
+        print('PROLOG INTIALIZED')
+        self.prolog.consult(self.PL_FILENAME)
+        print('PROLOG CONSULTED')
+        # self.days_schedules = None
+        self.all_slots = all_slots
 
-    def connect_schedule(self):
-        """
-        Reads the static schedule saved in the system
-        """
-        self.days_schedules, sheet_names, headers = self.parser.parse_schedule(
-        )
-        self.all_slots = self.parser.listify_slots(self.days_schedules)
+    # def connect_schedule(self):
+    #     """
+    #     Reads the static schedule saved in the system
+    #     """
+    #     self.days_schedules, sheet_names, headers = self.parser.parse_schedule(
+    #     )
+    #     self.all_slots = self.parser.listify_slots(self.days_schedules)
+    #     self.all_slots = self.query_formater.clean_formatted_slots(
+    #         self.all_slots)
 
     def query_model(self, compensation_slot):
         """
         Creates a query to the constraint model
         """
-        slots_cleaned = self.query_formater.clean_formatted_slots(
-            self.all_slots)
-        slots_digitized = self.query_formater.digitize(slots_cleaned)
-        # compensation_slot = self.query_formater.get_random_slot_to_compensate(all_slots, randomized=False)
-        # print("Compensation slot = " + str(compensation_slot))
-        ready_compensation_slot, holiday = self.ready_compensation(
-            compensation_slot)
+        slots_digitized = self.query_formater.digitize(self.all_slots)
+        ready_compensation_slot, holiday = self.ready_compensation(compensation_slot)
         query_statement = self.query_formater.create_query(
-            slots_digitized, holiday, ready_compensation_slot)
+            slots_digitized, ready_compensation_slot, holiday=holiday)
+        print(query_statement)
         return self.prolog.query(query_statement)
 
     def ready_compensation(self, compensation_slot):
         """
         Ensure validity of a slot and make it ready for query
         """
+        # print(compensation_slot)
+        # print(slots_cleaned)
         if compensation_slot in self.all_slots:
-            return self.query_formater.turn_to_variable_slot(compensation_slot)
-        else:
-            return "Error"
+            holiday = 0
+            for day_i in range(4, 30, 5):
+                if compensation_slot[0] > day_i:
+                    break
+                holiday += 1
+            
+            _, subject, _, _, subgroup, _ = compensation_slot
+            slot_string =\
+                self.query_formater.convert_to_query_format(self.query_formater.turn_to_variable_slot(compensation_slot))
+
+            return (slot_string, subject, subgroup), holiday
 
     def decode_slot(self, slot):
         """
@@ -70,13 +80,32 @@ class ConstraintModelEngine:
                                                subgroups=False)
         return sorted(groups)
 
-    def get_group_slots(self, target_group):
+    def get_group_slots(self, target_group, json_format=False):
         """
         Lists all slots of specific group
         """
+
+        # import json
+
+        target_group = target_group.replace("_", " ").lower()
         group_slots = []
         for slot in self.all_slots:
-            _, _, _, group, _, _ = slot
-            if group == target_group:
-                group_slots.append(slot)
+            num, subject, slot_type, group, subgroup, location = slot
+            if group.lower() == target_group:
+                if json_format:
+                    slot = {
+                        "slot_num":str(num),
+                        "slot_subject":str(subject),
+                        "slot_type":str(slot_type),
+                        "slot_group":str(group),
+                        "slot_subgroup":str(subgroup),
+                        "slot_location":str(location)
+                    }
+                    group_slots.append(slot)
+                else:
+                    group_slots.append(slot)
+
+        if json_format:
+            group_slots = json.dumps(group_slots)
+
         return group_slots

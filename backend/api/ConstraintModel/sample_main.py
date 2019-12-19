@@ -11,7 +11,7 @@ from schedule_parser import ScheduleParser
 from query_formater import QueryFormater
 from pyswip import Prolog
 
-parser = ScheduleParser()
+parser = ScheduleParser(filename="MET_Winter19_schedule_31131.xlsx")
 days_schedules, sheet_names, headers = parser.parse_schedule()
 all_slots = parser.listify_slots(days_schedules)
 query_formater = QueryFormater()
@@ -26,7 +26,40 @@ prolog.consult("constraint_based_approach.pl")
 for soln in prolog.query(query_statement):
     print(soln)
     
+
+
+def to_json_fixture(all_slots, model_name = "api.slot"):
+    import json
+    slot_counter = 0
+    all_slots_records = []
+    for slot in all_slots:
+        slot_counter += 1
+        slot_num, slot_subject, slot_type,\
+        slot_group, slot_subgroup, slot_location = slot
+         
+        slot_record = {}
+        slot_record["slot_num"] = slot_num
+        slot_record["slot_subject"] = slot_subject
+        slot_record["slot_type"] = slot_type
+        slot_record["slot_group"] = slot_group
+        slot_record["slot_subgroup"] = slot_subgroup
+        slot_record["slot_location"] = slot_location
+#        slot_record = json.dumps(slot_record)
+        print(slot_record)
+        
+        db_record = {}
+        db_record["model"] = model_name
+        db_record["pk"] = slot_counter
+        db_record["fields"] = slot_record
+#        db_record = json.dumps(db_record)
+        all_slots_records.append(db_record)
+        print(db_record)
+        
+    all_slots_records = json.dumps(all_slots_records)
+    with open("schedule_slots_fixture.json", "w") as f:
+        f.write(all_slots_records)
     
+
 #   
 
 #with open("query_example.txt", "w") as f:

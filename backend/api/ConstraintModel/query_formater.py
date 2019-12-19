@@ -130,6 +130,9 @@ class QueryFormater:
         return list(all_subjects), list(all_groups), list(all_subgroups)
 
     def create_query(self, slots, compensation_slot=None, holiday=0):
+        """
+        Create a prolog constraint model query
+        """
         # Note: a day contains 5 slots
         first_slot_in_holiday = holiday * 5
         last_slot_in_holiday = (holiday * 5) + 4
@@ -141,10 +144,10 @@ class QueryFormater:
                 continue
             slots_string += self.convert_to_query_format(slot)
             slots_string += ","
+
         if not compensation_slot:
             slots_string = slots_string[:-1] + "]"
             subjects, groups, subgroups = self.listify_on_own(slots)
-
         else:
             comp_slot_string, comp_subject, comp_subgroup = compensation_slot
             slots_string += comp_slot_string + "]"
@@ -190,7 +193,7 @@ class QueryFormater:
             slot_index = 0
 
         slot = all_compensation_slots[slot_index]
-        slot_num, subject, _, _, subgroup, _ = slot
+        _, subject, _, _, subgroup, _ = slot
         slot_string =\
             self.convert_to_query_format(self.turn_to_variable_slot(slot))
 
