@@ -10,6 +10,7 @@ from .models import Slot
 from .serializers import SlotSerializer
 from django.core.paginator import Paginator
 
+
 class AllSlots(APIView):
     """
     List all slots
@@ -22,11 +23,12 @@ class AllSlots(APIView):
             slots = Slot.objects.filter(slot_group=group_name)\
                             .order_by('slot_num')
             serializer = SlotSerializer(slots, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)  
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
         # slots = Slot.objects.all()
         # serializer = SlotSerializer(slots, many=True)
         # return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class AllGroups(APIView):
     """
@@ -36,14 +38,18 @@ class AllGroups(APIView):
         """
         Respond with all existing slots
         """
-        groups = Slot.objects.order_by('slot_group').values_list('slot_group', flat=True).distinct()
-        return Response({"groups":groups}, status=status.HTTP_200_OK)
+        groups = Slot.objects.order_by('slot_group').values_list(
+            'slot_group', flat=True).distinct()
+        return Response({"groups": groups}, status=status.HTTP_200_OK)
 
 
 class CompensateSlot(APIView):
     """
     Retrieve, update or delete a slot instance.
     """
+    # self.all_slots = self.get_all_objects()
+    schedule_solver = ConstraintModelEngine.get_instance()
+
     def get_object(self, slot_id):
         try:
             return tuple(Slot.objects\
@@ -54,7 +60,7 @@ class CompensateSlot(APIView):
                         .get(pk=slot_id))
         except Slot.DoesNotExist:
             raise Http404
-    
+
     def get_all_objects(self):
         return tuple(Slot.objects.all()\
             .order_by('slot_num')\
@@ -63,21 +69,18 @@ class CompensateSlot(APIView):
                 'slot_type', 'slot_group',\
                 'slot_subgroup', 'slot_location'))
 
-    def get(self, request, pk=None):
+    def get(self, request, slot_id=None):
         """
         Get possible compensations of this slot
         """
-        to_compensate_slot = self.get_object(slot_id=pk)
+        to_compensate_slot = self.get_object(slot_id=slot_id)
 
         if to_compensate_slot:
             all_slots = self.get_all_objects()
-            print(all_slots)
-            schedule_solver = ConstraintModelEngine(all_slots=all_slots)
-            compensation = schedule_solver.query_model(to_compensate_slot)
-            print(compensation)
-            return Response(compensation, status=status.HTTP_200_OK)
+            self.schedule_solver.connect_schedule(all_slots)
+            possiblities = self.schedule_solver.query_model(to_compensate_slot)
+            return Response(possiblities, status=status.HTTP_200_OK)
 
-        print("to_compensate_slot is empty")
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     # def delete(self, request, pk, format=None):

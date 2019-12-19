@@ -7,6 +7,7 @@ SLOT_NUM_VALIDATORS = [MinValueValidator(0), MaxValueValidator(29)]
 SLOT_LOCATION_VALIDATORS = [MinValueValidator(0), MaxValueValidator(63)]
 # SLOT_TYPE_CHOICES = ["big_lec", "small_lec", "lab", "tut"]
 
+
 class Slot(models.Model):
     """
     DB Model representing a single slot in schedule
@@ -31,6 +32,6 @@ class Slot(models.Model):
         verbose_name_plural = 'slots'
         ordering = ['slot_num']
 
-
     def __unicode__(self):
-        return u"Slot at time %s in location %s" % (str(self.slot_num), str(self.slot_location))
+        return u"Slot at time %s in location %s" % (str(
+            self.slot_num), str(self.slot_location))

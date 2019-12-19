@@ -2,15 +2,17 @@
 QueryFormater
 """
 import re
+
+
 class QueryFormater:
     """
     QueryFormater contains all functions that makes the schedule ready
     for the constraint model injection
     """
     def __init__(self):
-        self.subjects_dict = {}
-        self.groups_dict = {}
-        self.subgroups_dict = {}
+        self.subjects_dict = None
+        self.groups_dict = None
+        self.subgroups_dict = None
 
     @staticmethod
     def clean_subject(subject):
@@ -42,13 +44,15 @@ class QueryFormater:
             cleaned_slots.append(slot)
         return cleaned_slots
 
-    def digitize(self, slots):
+    def create_dictionaries(self, slots):
         """
-        Encodes subjects, subgroups, groups into numbers,
-        and creates dictionary of the values
+        Create digits dictionaries for subjects, groups, subgroups
         """
-        digi_slots = []
         # has to begin with 1 to avoid not(0)
+        self.subjects_dict = {}
+        self.groups_dict = {}
+        self.subgroups_dict = {}
+
         subject_current_num = 1
         group_current_num = 1
         subgroup_current_num = 1
@@ -64,24 +68,40 @@ class QueryFormater:
                 self.subgroups_dict[subgroup] = subgroup_current_num
                 subgroup_current_num += 1
 
-        for (num, subject, slot_type, group, subgroup, location) in slots:
-            #        if num == 27:
-            #            print(str(num) + " " + slot_type + " " + group + " " + subgroup)
-            digi_subject = self.subjects_dict.get(subject)
-            digi_group = self.groups_dict.get(group)
-            #        digi_type = types_dict.get(slot_type)
-            digi_subgroup = self.subgroups_dict.get(subgroup)
-            if not digi_subject:
-                print("Subject " + subject + " does not exist.")
-            if not digi_group:
-                print("Group " + group + " does not exist.")
+    def digitize_one_slot(self, slot):
+        """
+        Digitize one single slot
+        """
+        num, subject, slot_type, group, subgroup, location = slot
+        digi_subject = self.subjects_dict.get(subject)
+        digi_group = self.groups_dict.get(group)
+        #        digi_type = types_dict.get(slot_type)
+        digi_subgroup = self.subgroups_dict.get(subgroup)
 
-    #        if not(digi_type):
-    #            print("Type " + slot_type + " does not exist.")
-            if not digi_subgroup:
-                print("Subgroup " + subgroup + " does not exist.")
-            slot = (num, digi_subject, slot_type, digi_group, digi_subgroup,
-                    location)
+        if not digi_subject:
+            print("Subject " + subject + " does not exist.")
+        if not digi_group:
+            print("Group " + group + " does not exist.")
+        if not digi_subgroup:
+            print("Subgroup " + subgroup + " does not exist.")
+
+        slot = (num, digi_subject, slot_type, digi_group, digi_subgroup,
+                location)
+
+        return slot
+
+    def digitize(self, slots):
+        """
+        Encodes subjects, subgroups, groups into numbers,
+        and creates dictionary of the values
+        """
+
+        if not self.subjects_dict:
+            self.create_dictionaries(slots)
+
+        digi_slots = []
+        for slot in slots:
+            slot = self.digitize_one_slot(slot)
             digi_slots.append(slot)
 
         return digi_slots
@@ -170,9 +190,7 @@ class QueryFormater:
         _, subject, slot_type, group, subgroup, _ = slot
         return ("NUM", subject, slot_type, group, subgroup, "LOCATION")
 
-    def get_random_slot_to_compensate(self,
-                                      slots,
-                                      holiday=0,
+    def get_random_slot_to_compensate(self, slots, holiday=0,
                                       randomized=False):
         """
         Returns random or not slot to be compensated; useful for debugging
