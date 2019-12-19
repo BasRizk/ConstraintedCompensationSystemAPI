@@ -49,9 +49,23 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % (TIMING, TYPE, GROUP)
     % No more than one lec given to the same group at the same time
     serialize_lecs_per_group(SLOTS, GROUPS),
-    print("LEC SERIALIZED PER EACH GROUP"), nl.
+    print("LEC SERIALIZED PER EACH GROUP"), nl,
 
+    extract_variable_slots(SLOTS, VAR_SLOTS),
+    labeling([min(LOCATION_TOTAL_COST)], VAR_SLOTS).
 
+/**
+ * Extract variable slots 
+ */
+extract_variable_slots([], []).
+extract_variable_slots([SLOT|SLOTS], VAR_SLOTS):-
+    SLOT = (NUM, _, _, _, _, LOCATION),
+    nonvar(NUM), nonvar(LOCATION),
+    extract_variable_slots(SLOTS, VAR_SLOTS).
+extract_variable_slots([SLOT|SLOTS], [SLOT|VAR_SLOTS]):-
+    SLOT = (NUM, _, _, _, _, LOCATION),
+    var(NUM), var(LOCATION),
+    extract_variable_slots(SLOTS, VAR_SLOTS).
 
 /**
  * Ensure slots structure, and NUM of slot validity
