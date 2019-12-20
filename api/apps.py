@@ -4,9 +4,9 @@ from django.apps import AppConfig
 class ApiConfig(AppConfig):
     name = 'api'
 
-    def ready(self):
-        if 'runserver' not in sys.argv:
-            return True
+    # def ready(self):
+    #     if 'runserver' not in sys.argv:
+    #         return True
 
 # def load_schedule():
 #     import numpy as np

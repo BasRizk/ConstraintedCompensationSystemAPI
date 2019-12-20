@@ -47,9 +47,7 @@ class CompensateSlot(APIView):
     """
     Retrieve, update or delete a slot instance.
     """
-    # self.all_slots = self.get_all_objects()
-    schedule_solver = ConstraintModelEngine.get_instance()
-
+    
     def get_object(self, slot_id):
         try:
             return tuple(Slot.objects\
@@ -76,9 +74,10 @@ class CompensateSlot(APIView):
         to_compensate_slot = self.get_object(slot_id=slot_id)
 
         if to_compensate_slot:
+            schedule_solver = ConstraintModelEngine.get_instance()
             all_slots = self.get_all_objects()
-            self.schedule_solver.connect_schedule(all_slots)
-            possiblities = self.schedule_solver.query_model(to_compensate_slot)
+            schedule_solver.connect_schedule(all_slots)
+            possiblities = schedule_solver.query_model(to_compensate_slot)
             return Response(possiblities, status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
