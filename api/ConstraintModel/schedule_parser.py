@@ -47,7 +47,7 @@ class ScheduleParser:
         and clearing up any rows corresponding to the titles refered to in
         list_of_dumb given in the instance intialization of the class
         """
-        schedule = schedule.dropna(how="all", subset=self.headers[1:])
+        schedule = schedule.dropna(how="all", subset=self.headers[:])
         schedule = schedule.apply(lambda x: x.astype(str).str.lower())
         list_of_dumb = [
             "rooms", "large lecture halls", "small lecture halls", "cs labs"
