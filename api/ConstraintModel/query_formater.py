@@ -201,20 +201,22 @@ class QueryFormater:
         _, subject, slot_type, group, subgroup, _, teacher = slot
         return ("NUM", subject, slot_type, group, subgroup, "LOCATION", teacher)
 
-    def get_random_slot_to_compensate(self, slots, holiday=0,
+    def get_random_slot_to_compensate(self, slots,
+                                      # holiday=0,
                                       randomized=False, slot_index=0):
         """
         Returns random or not slot to be compensated; useful for debugging
         """
-        first_slot_in_holiday = holiday * 5
-        last_slot_in_holiday = (holiday * 5) + 4
-        all_compensation_slots = []
-        for slot in slots:
-            slot_num, _, _, _, _, _, _ = slot
-            if (slot_num >= first_slot_in_holiday) and \
-                                 (slot_num <= last_slot_in_holiday):
-                all_compensation_slots.append(slot)
-
+        # first_slot_in_holiday = holiday * 5
+        # last_slot_in_holiday = (holiday * 5) + 4
+        # all_compensation_slots = []
+        # for slot in slots:
+        #     slot_num, _, _, _, _, _, _ = slot
+        #     if (slot_num >= first_slot_in_holiday) and \
+        #                          (slot_num <= last_slot_in_holiday):
+        #         all_compensation_slots.append(slot)
+        all_compensation_slots = slots
+        
         if randomized:
             from random import random as rand
             slot_index = int(rand() * len(all_compensation_slots))
@@ -223,7 +225,7 @@ class QueryFormater:
         
         holiday = 0
         for day_i in range(4, 30, 5):
-            if slot[0] > day_i:
+            if slot[0] <= day_i:
                 break
             holiday += 1
             

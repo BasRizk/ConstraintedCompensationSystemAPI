@@ -28,7 +28,8 @@ all_slots_digitized = query_formater.digitize(all_slots)
 compensation_slot, holiday =\
     query_formater.get_random_slot_to_compensate(all_slots,
                                                  randomized = False,
-                                                 slot_index = 10)
+                                                 slot_index = 0)
+print(holiday)
 print("Compensation slot = " + str(compensation_slot))
 
 query_statement = query_formater.create_query(all_slots_digitized, compensation_slot, holiday)
