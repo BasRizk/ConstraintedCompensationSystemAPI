@@ -3,7 +3,7 @@
 % 
 % VARIABLES:
 % 
-% A SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, LOCATION)
+% A SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, LOCATION, TEACHER)
 % EX (3, GRAPHICS, LAB, 7 CSEN, 7 CSEN T18, 1)
 % 
 % NUM: {0..29} .. 5X6
@@ -59,11 +59,11 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
  */
 extract_variable_slots([], []).
 extract_variable_slots([SLOT|SLOTS], VAR_SLOTS):-
-    SLOT = (NUM, _, _, _, _, LOCATION),
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
     nonvar(NUM), nonvar(LOCATION),
     extract_variable_slots(SLOTS, VAR_SLOTS).
 extract_variable_slots([SLOT|SLOTS], [SLOT|VAR_SLOTS]):-
-    SLOT = (NUM, _, _, _, _, LOCATION),
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
     var(NUM), var(LOCATION),
     extract_variable_slots(SLOTS, VAR_SLOTS).
 
@@ -72,7 +72,7 @@ extract_variable_slots([SLOT|SLOTS], [SLOT|VAR_SLOTS]):-
  */
 ensure_slots([], _).
 ensure_slots([SLOT|SLOTS], HOLIDAY):-
-    SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _),
+    SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _, _),
     (
         (HOLIDAY = 0, NUM in 5..29);
         (HOLIDAY = 5, NUM in 0..24);
@@ -103,11 +103,11 @@ all_different_locations_per_slot(NUM, SLOTS):-
 
 extract_slots_same_location(_, [] ,[]).
 extract_slots_same_location(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
-    SLOT = (NUM,_,_,_,_,LOCATION), 
+    SLOT = (NUM,_,_,_,_,LOCATION, _), 
     NUM #= TARGET_NUM,
     extract_slots_same_location(TARGET_NUM, SLOTS, LOCATIONS).
 extract_slots_same_location(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
-    SLOT = (ANOTHER_NUM,_,_,_,_,_),
+    SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
     ANOTHER_NUM #\= TARGET_NUM,
     extract_slots_same_location(TARGET_NUM, SLOTS, LOCATIONS).
 
@@ -133,7 +133,7 @@ ensure_allocation([], 0).
 ensure_allocation([SLOT|SLOTS], TOTAL_COST):-
     TOTAL_COST #= (OLD_COST + SINGLE_COST),
     ensure_allocation(SLOTS, OLD_COST),
-    SLOT = (_, _, TYPE, _, _, LOCATION),
+    SLOT = (_, _, TYPE, _, _, LOCATION,_),
     location_cost(TYPE, LOCATION, SINGLE_COST).
 
 /**
@@ -158,11 +158,11 @@ serialize_lecs_per_group(SLOTS, [GROUP|GROUPS]):-
 list_lec_group_timings([],_,[]).
 list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, TIMINGS_LIST):-
     list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
-    SLOT = (_, _, TYPE, GROUP, _, _),
+    SLOT = (_, _, TYPE, GROUP, _, _, _),
     (TYPE \= small_lec; TYPE \= big_lec; GROUP \= TARGET_GROUP).
 list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
     list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
-    SLOT = (TIME, _, TYPE, TARGET_GROUP, _, _),
+    SLOT = (TIME, _, TYPE, TARGET_GROUP, _, _, _),
     (TYPE = small_lec; TYPE = big_lec).
 
 /**
@@ -177,12 +177,12 @@ serialize_subgroups(SLOTS, [SUBGROUP|SUBGROUPS]):-
 
 list_subgroup_timings([],_,[]).
 list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, TIMINGS_LIST):-
-    SLOT = (_, _, _, _, SUBGROUP, _),
+    SLOT = (_, _, _, _, SUBGROUP, _, _),
     SUBGROUP \= TARGET_SUBGROUP,
     list_subgroup_timings(SLOTS, TARGET_SUBGROUP, TIMINGS_LIST).
 
 list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
-    SLOT = (TIME, _, _, _, TARGET_SUBGROUP, _),
+    SLOT = (TIME, _, _, _, TARGET_SUBGROUP, _, _),
     list_subgroup_timings(SLOTS, TARGET_SUBGROUP, TIMINGS_LIST).
 
 
