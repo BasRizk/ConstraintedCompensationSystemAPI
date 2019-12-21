@@ -202,7 +202,7 @@ class QueryFormater:
         return ("NUM", subject, slot_type, group, subgroup, "LOCATION", teacher)
 
     def get_random_slot_to_compensate(self, slots, holiday=0,
-                                      randomized=False):
+                                      randomized=False, slot_index=0):
         """
         Returns random or not slot to be compensated; useful for debugging
         """
@@ -218,15 +218,28 @@ class QueryFormater:
         if randomized:
             from random import random as rand
             slot_index = int(rand() * len(all_compensation_slots))
-        else:
-            slot_index = 0
 
         slot = all_compensation_slots[slot_index]
+        
+        holiday = 0
+        for day_i in range(4, 30, 5):
+            if slot[0] > day_i:
+                break
+            holiday += 1
+            
+        print("Compensation slot = " + str(slot))
+        
+        digitized_slot =\
+                    self.digitize_one_slot(slot)
         _, subject, _, _, subgroup, _, _ = slot
         slot_string =\
-            self.convert_to_query_format(self.turn_to_variable_slot(slot))
+            self.convert_to_query_format(self.turn_to_variable_slot(digitized_slot))
 
-        return slot_string, subject, subgroup
+
+
+        _, subject, _, _, subgroup, _, _ = digitized_slot
+
+        return (slot_string, subject, subgroup), holiday
 
     def decode_subject(self, encoding):
         """
