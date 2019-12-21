@@ -19,14 +19,16 @@ class Slot(models.Model):
     slot_group = models.CharField(max_length=60)
     slot_subgroup = models.CharField(max_length=60)
     slot_location = models.IntegerField(validators=SLOT_LOCATION_VALIDATORS)
+    slot_teacher = models.CharField(max_length=60)
 
     def __str__(self):
-        return '{}, {}, {}, {}, {}, {}'.format(self.slot_num,\
-                                            self.slot_subject,\
-                                            self.slot_type,\
-                                            self.slot_group,\
-                                            self.slot_subgroup,\
-                                            self.slot_location)
+        return '{}, {}, {}, {}, {}, {}'.format(self.slot_num,
+                                            self.slot_subject,
+                                            self.slot_type,
+                                            self.slot_group,
+                                            self.slot_subgroup,
+                                            self.slot_location,
+                                            self.slot_teacher)
 
     class Meta:
         verbose_name_plural = 'slots'

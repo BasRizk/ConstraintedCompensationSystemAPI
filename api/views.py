@@ -51,10 +51,11 @@ class CompensateSlot(APIView):
     def get_object(self, slot_id):
         try:
             return tuple(Slot.objects\
-                .values_list('slot_num',\
-                    'slot_subject',\
-                    'slot_type', 'slot_group',\
-                    'slot_subgroup', 'slot_location')\
+                .values_list('slot_num',
+                    'slot_subject',
+                    'slot_type', 'slot_group',
+                    'slot_subgroup', 'slot_location',
+                    'slot_teacher')\
                         .get(pk=slot_id))
         except Slot.DoesNotExist:
             raise Http404
@@ -62,10 +63,11 @@ class CompensateSlot(APIView):
     def get_all_objects(self):
         return tuple(Slot.objects.all()\
             .order_by('slot_num')\
-            .values_list('slot_num',\
-                'slot_subject',\
-                'slot_type', 'slot_group',\
-                'slot_subgroup', 'slot_location'))
+            .values_list('slot_num',
+                'slot_subject',
+                'slot_type', 'slot_group',
+                'slot_subgroup', 'slot_location',
+                'slot_teacher'))
 
     def get(self, request, slot_id=None):
         """

@@ -22,6 +22,7 @@ class Migration(migrations.Migration):
                 ('slot_group', models.CharField(max_length=60)),
                 ('slot_subgroup', models.CharField(max_length=60)),
                 ('slot_location', models.IntegerField(validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(63)])),
+                ('slot_teacher', models.CharField(max_length=60)),
             ],
             options={
                 'verbose_name_plural': 'slots',

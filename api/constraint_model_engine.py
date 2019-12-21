@@ -89,7 +89,7 @@ class ConstraintModelEngine:
                 self.query_formater.turn_to_variable_slot(digitized_slot)
             slot_string =\
                 self.query_formater.convert_to_query_format(variable_slot)
-            _, subject, _, _, subgroup, _ = digitized_slot
+            _, subject, _, _, subgroup, _, _ = digitized_slot
 
             return (slot_string, subject, subgroup), holiday
 
@@ -98,11 +98,11 @@ class ConstraintModelEngine:
         Decodes an encoded (digitized) slot
         - a slot that has been queried
         """
-        num, subject, slot_type, subgroup, group, location = slot
+        num, subject, slot_type, subgroup, group, location, teacher = slot
         subject = self.query_formater.decode_subject(subject)
         group = self.query_formater.decode_group(group)
         subgroup = self.query_formater.decode_subgroup(subgroup)
-        return num, subject, slot_type, group, subgroup, location
+        return num, subject, slot_type, group, subgroup, location, teacher
 
     # def get_all_groups(self):
     #     """
