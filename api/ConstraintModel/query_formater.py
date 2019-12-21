@@ -13,6 +13,7 @@ class QueryFormater:
         self.subjects_dict = None
         self.groups_dict = None
         self.subgroups_dict = None
+        self.teachers_dict = None
 
     @staticmethod
     def clean_subject(subject):
@@ -38,9 +39,9 @@ class QueryFormater:
         """
         cleaned_slots = []
         for (num, subject, slot_type, group, subgroup,
-             location) in formatted_slots:
+             location, teacher) in formatted_slots:
             subject = QueryFormater.clean_subject(subject)
-            slot = (num, subject, slot_type, group, subgroup, location)
+            slot = (num, subject, slot_type, group, subgroup, location, teacher)
             cleaned_slots.append(slot)
         return cleaned_slots
 
@@ -52,31 +53,38 @@ class QueryFormater:
         self.subjects_dict = {}
         self.groups_dict = {}
         self.subgroups_dict = {}
+        self.teachers_dict = {}
 
         subject_current_num = 1
         group_current_num = 1
         subgroup_current_num = 1
-
-        for (_, subject, _, group, subgroup, _) in slots:
-            if not (self.subjects_dict.get(subject)):
+        teacher_current_num = 1
+        
+        for (_, subject, _, group, subgroup, _, teacher) in slots:
+            if not self.subjects_dict.get(subject):
                 self.subjects_dict[subject] = subject_current_num
                 subject_current_num += 1
-            if not (self.groups_dict.get(group)):
+            if not self.groups_dict.get(group):
                 self.groups_dict[group] = group_current_num
                 group_current_num += 1
-            if not (self.subgroups_dict.get(subgroup)):
+            if not self.subgroups_dict.get(subgroup):
                 self.subgroups_dict[subgroup] = subgroup_current_num
                 subgroup_current_num += 1
+            if not self.teachers_dict.get(teacher):
+                self.teachers_dict[teacher] = teacher_current_num
+                teacher_current_num += 1
+                
 
     def digitize_one_slot(self, slot):
         """
         Digitize one single slot
         """
-        num, subject, slot_type, group, subgroup, location = slot
+        num, subject, slot_type, group, subgroup, location, teacher = slot
         digi_subject = self.subjects_dict.get(subject)
         digi_group = self.groups_dict.get(group)
         #        digi_type = types_dict.get(slot_type)
         digi_subgroup = self.subgroups_dict.get(subgroup)
+        digi_teacher = self.teachers_dict.get(teacher)
 
         if not digi_subject:
             print("Subject " + subject + " does not exist.")
@@ -84,9 +92,11 @@ class QueryFormater:
             print("Group " + group + " does not exist.")
         if not digi_subgroup:
             print("Subgroup " + subgroup + " does not exist.")
+        if not digi_teacher:
+            print("Teacher " + teacher + " does not exist.")
 
         slot = (num, digi_subject, slot_type, digi_group, digi_subgroup,
-                location)
+                location, digi_teacher)
 
         return slot
 
@@ -129,12 +139,13 @@ class QueryFormater:
         all_groups = set()
         all_subgroups = set()
 
-        for (_, subject, slot_type, group, subgroup, _) in slots:
+        for (_, subject, slot_type, group, subgroup, _, teacher) in slots:
             if subject == '':
                 print("ERROR: subject is empty!")
                 print(group)
                 print(slot_type)
                 print(subject)
+                print(teacher)
             if subjects:
                 all_subjects.add(self.convert_to_query_format(subject))
             if groups:
@@ -187,8 +198,8 @@ class QueryFormater:
         Takes slot to be compensated; and returns it in the required format
         by the constraint model
         """
-        _, subject, slot_type, group, subgroup, _ = slot
-        return ("NUM", subject, slot_type, group, subgroup, "LOCATION")
+        _, subject, slot_type, group, subgroup, _, teacher = slot
+        return ("NUM", subject, slot_type, group, subgroup, "LOCATION", teacher)
 
     def get_random_slot_to_compensate(self, slots, holiday=0,
                                       randomized=False):
@@ -199,7 +210,7 @@ class QueryFormater:
         last_slot_in_holiday = (holiday * 5) + 4
         all_compensation_slots = []
         for slot in slots:
-            slot_num, _, _, _, _, _ = slot
+            slot_num, _, _, _, _, _, _ = slot
             if (slot_num >= first_slot_in_holiday) and \
                                  (slot_num <= last_slot_in_holiday):
                 all_compensation_slots.append(slot)
@@ -211,7 +222,7 @@ class QueryFormater:
             slot_index = 0
 
         slot = all_compensation_slots[slot_index]
-        _, subject, _, _, subgroup, _ = slot
+        _, subject, _, _, subgroup, _, _ = slot
         slot_string =\
             self.convert_to_query_format(self.turn_to_variable_slot(slot))
 
@@ -239,4 +250,12 @@ class QueryFormater:
         """
         key_list = list(self.subgroups_dict.keys())
         val_list = list(self.subgroups_dict.values())
+        return key_list[val_list.index(encoding)]
+    
+    def decode_teacher(self, encoding):
+        """
+        Decode teacher based on past encoding
+        """
+        key_list = list(self.teachers_dict.keys())
+        val_list = list(self.teachers_dict.values())
         return key_list[val_list.index(encoding)]
