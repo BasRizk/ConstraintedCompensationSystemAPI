@@ -19,6 +19,10 @@ teachers_schedules = parser.parse_teachers_schedules()
 all_slots = parser.listify_slots()
 query_formater = QueryFormater()
 all_slots = query_formater.clean_formatted_slots(all_slots)
+
+parser.convert_to_excel(all_slots)
+# to_json_fixture(all_slots)
+
 all_slots = query_formater.digitize(all_slots)
 compensation_slot = query_formater.get_random_slot_to_compensate(all_slots, randomized = True)
 print("Compensation slot = " + str(compensation_slot))
@@ -38,7 +42,7 @@ def to_json_fixture(all_slots, model_name = "api.slot"):
     for slot in all_slots:
         slot_counter += 1
         slot_num, slot_subject, slot_type,\
-        slot_group, slot_subgroup, slot_location = slot
+        slot_group, slot_subgroup, slot_location, slot_teacher = slot
          
         slot_record = {}
         slot_record["slot_num"] = slot_num
@@ -47,6 +51,7 @@ def to_json_fixture(all_slots, model_name = "api.slot"):
         slot_record["slot_group"] = slot_group
         slot_record["slot_subgroup"] = slot_subgroup
         slot_record["slot_location"] = slot_location
+        slot_record["slot_teacher"] = slot_teacher
 #        slot_record = json.dumps(slot_record)
         print(slot_record)
         
@@ -64,14 +69,13 @@ def to_json_fixture(all_slots, model_name = "api.slot"):
     
 
 #   
-
-#with open("query_example.txt", "w") as f:
-#    query_rest = query_statement
-#    while(True):
-#        limit = 1000
-#        if len(query_rest) < limit:
-#            break
-#        f.write(query_rest[:limit])
-#        f.write("\n")
-#        query_rest = query_rest[limit:]
-#    f.write(query_rest)
+with open("query_example.txt", "w") as f:
+    query_rest = query_statement
+    while(True):
+        limit = 1000
+        if len(query_rest) < limit:
+            break
+        f.write(query_rest[:limit])
+        f.write("\n")
+        query_rest = query_rest[limit:]
+    f.write(query_rest)

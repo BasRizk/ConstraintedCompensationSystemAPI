@@ -192,3 +192,85 @@ class ScheduleParserWithTeachers(ScheduleParser):
         print(str(self.dummy_teacher_num) + " dummy teacher have been assigned.")
         
         return list_of_formatted_slots
+    
+    def convert_to_excel(self, all_slots, output_filename="formatted_schedule.xlsx"):
+        print("..Convert to excel with teachers.")
+        def stringify(multiple_tuples):
+            out_str = ""
+            for a_tuple in multiple_tuples:
+                out_str += str(a_tuple) + "\n"
+            return out_str
+        
+        all_groups = set()
+        all_slots_collapsed = {}
+        for slot in all_slots:
+            (slot_num, _, _, group, _, _, _) = slot
+            one_slot_collapse = all_slots_collapsed.get(slot_num)
+            if not one_slot_collapse:
+                all_slots_collapsed[slot_num] = []
+                one_slot_collapse = all_slots_collapsed[slot_num]
+            one_slot_collapse.append(slot)
+            all_groups.add(group)
+        all_groups = sorted(all_groups)
+        
+        all_slots_grouped = {}
+        for slot_num_key in all_slots_collapsed.keys():
+            list_of_slots = all_slots_collapsed.get(slot_num_key)
+            all_slots_grouped[slot_num_key] = {}
+            for slot in list_of_slots:
+                (slot_num, subject, slot_type, group, subgroup, location, teacher) = slot
+                one_slot_group = all_slots_grouped[slot_num_key].get(group)
+                if not one_slot_group:
+                    all_slots_grouped[slot_num_key][group] = []
+                    one_slot_group = all_slots_grouped[slot_num_key][group]
+                # subgroup = subgroup.strip(group)
+                one_slot_group.append((slot_num, subject, slot_type, subgroup, location, teacher))
+        
+        writer = pd.ExcelWriter(output_filename, engine='xlsxwriter')
+        workbook=writer.book
+        wrap_format = workbook.add_format({'text_wrap': True})
+     
+        slots_grouped_per_day = {}
+        for day in self.sheet_names:
+            slots_grouped_per_day[day] = {}
+            # registered_times = []
+            for time in self.headers[1:]:
+                time_num = self.headers.index(time)
+                day_num = self.sheet_names.index(day)
+                slot_num = (time_num - 1) + (day_num * 5)
+                
+                # groups_at_one_slot = all_slots_grouped.get(slot_num)
+                # if not groups_at_one_slot:
+                #     continue
+                # registered_times.append(time)
+                # for group in groups_at_one_slot.keys():
+                for group in all_groups:
+                    one_group_slots = slots_grouped_per_day[day].get(group)
+                    if not one_group_slots:
+                        slots_grouped_per_day[day][group] = []
+                        one_group_slots = slots_grouped_per_day[day][group]
+                    existing_group_slots = all_slots_grouped.get(slot_num)
+                    if existing_group_slots:
+                        existing_group_slots = existing_group_slots.get(group)
+                        if existing_group_slots:
+                            one_group_slots.append(stringify(existing_group_slots))
+                            continue
+                    one_group_slots.append("")
+        
+            grouped_slot_df = pd.DataFrame.from_dict(slots_grouped_per_day[day],
+                                                     orient='index',
+                                                     columns=self.headers[1:])
+            
+            worksheet=workbook.add_worksheet(day)
+            writer.sheets[day] = worksheet
+            grouped_slot_df.to_excel(writer, sheet_name=day)
+            
+            for idx, col in enumerate(grouped_slot_df):  # loop through all columns
+                # series = grouped_slot_df[col]
+                # max_len = max((
+                #     series.astype(str).map(len).max(),  # len of largest item
+                #     len(str(series.name))  # len of column name/header
+                #     )) + 1  # adding a little extra space
+                worksheet.set_column(idx, idx, 40, wrap_format)  # set column width
+
+        writer.save()
