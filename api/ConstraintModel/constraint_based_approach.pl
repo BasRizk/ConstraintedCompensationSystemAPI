@@ -33,7 +33,7 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     print("SLOTS ENSURED"), nl,
 
     % (TIMING, LOCATION)
-    % => The schedules of the rooms. A room can not be assigned to multiple meetings at the same time.
+    % A room can not be assigned to multiple meetings at the same time.
     % No slot at the same location at the same time
     % Ensure allocation of resources
     no_slots_at_same_location(SLOTS),
@@ -50,6 +50,11 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % No more than one lec given to the same group at the same time
     serialize_lecs_per_group(SLOTS, GROUPS),
     print("LEC SERIALIZED PER EACH GROUP"), nl,
+    
+    % % (TIMING, TEACHER)
+    % % A staff member can not be assigned to multiple meetings at the same time.
+    % no_slots_assigned_same_teacher(SLOTS),
+    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
 
     extract_variable_slots(SLOTS, VAR_SLOTS),
     labeling([min(LOCATION_TOTAL_COST)], VAR_SLOTS).
@@ -96,20 +101,20 @@ no_slots_at_same_location(SLOTS):-
 all_different_locations_per_slot(-1,_).
 all_different_locations_per_slot(NUM, SLOTS):-
     NUM >= 0,
-    extract_slots_same_location(NUM , SLOTS, LOCATIONS),
+    extract_locations_of_same_time_slots(NUM , SLOTS, LOCATIONS),
     all_different(LOCATIONS),
     NEW_NUM #= NUM - 1, 
     all_different_locations_per_slot(NEW_NUM, SLOTS).
 
-extract_slots_same_location(_, [] ,[]).
-extract_slots_same_location(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
+extract_locations_of_same_time_slots(_, [] ,[]).
+extract_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
     SLOT = (NUM,_,_,_,_,LOCATION, _), 
     NUM #= TARGET_NUM,
-    extract_slots_same_location(TARGET_NUM, SLOTS, LOCATIONS).
-extract_slots_same_location(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
+    extract_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
+extract_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
     SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
     ANOTHER_NUM #\= TARGET_NUM,
-    extract_slots_same_location(TARGET_NUM, SLOTS, LOCATIONS).
+    extract_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
 
 /**
  * No two slots at the same time are assigned to the same TEACHER.
@@ -120,20 +125,20 @@ no_slots_assigned_same_teacher(SLOTS):-
 all_different_teachers_per_slot(-1,_).
 all_different_teachers_per_slot(NUM, SLOTS):-
     NUM >= 0,
-    extract_same_time_slots_teachers(NUM , SLOTS, TEACHERS),
+    extract_teachers_of_same_time_slots(NUM , SLOTS, TEACHERS),
     all_different(TEACHERS),
     NEW_NUM #= NUM - 1, 
     all_different_teachers_per_slot(NEW_NUM, SLOTS).
 
-extract_same_time_slots_teachers(_, [] ,[]).
-extract_same_time_slots_teachers(TARGET_NUM, [SLOT|SLOTS], [TEACHER|TEACHERS]):-  
+extract_teachers_of_same_time_slots(_, [] ,[]).
+extract_teachers_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [TEACHER|TEACHERS]):-  
     SLOT = (NUM,_,_,_,_,_,TEACHER), 
     NUM #= TARGET_NUM,
-    extract_same_time_slots_teachers(TARGET_NUM, SLOTS, TEACHERS).
-extract_same_time_slots_teachers(TARGET_NUM, [SLOT|SLOTS], TEACHERS):-
+    extract_teachers_of_same_time_slots(TARGET_NUM, SLOTS, TEACHERS).
+extract_teachers_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], TEACHERS):-
     SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
     ANOTHER_NUM #\= TARGET_NUM,
-    extract_same_time_slots_teachers(TARGET_NUM, SLOTS, TEACHERS).
+    extract_teachers_of_same_time_slots(TARGET_NUM, SLOTS, TEACHERS).
 
 /**
  * Ensure allocation
@@ -212,11 +217,6 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
 
 
 % CONSTRAINTS:
-% 
-% 1. Conflicts
-%  The schedules of the faculty members. A staff member can not be assigned to multiple meetings at
-% the same time.
-% -- (NOT EVEN REFERED TO ANYWHERE, MAYBE SOLVABLE IF BASED ON CHOICES OF INPUTS! AKA ANOTHER INTERSECTED SCHEDULE)
 % 
 % 4. Different Calendars -- Either, consider it in the backend before giving the query or split GROUP var!
 % It is possible that different study groups have different calendars. It is for example possible that 1st year
