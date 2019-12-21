@@ -18,12 +18,15 @@ class ScheduleParser:
                  headers_list=\
                      ["GROUP", "FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"],
                  columns_indices_to_use=[1, 2, 3, 4, 5, 6],
-                 list_of_ignored=["1architecture", "9 csen", "9 dmet"]):
+                 list_of_ignored=["1architecture", "9 csen", "9 dmet"],
+                 list_of_discarded_subjects=['ae','as', 'en', 'de']):
         self.filename = filename
         self.sheet_names = sheet_names_list
         self.headers = headers_list
         self.columns_to_use = columns_indices_to_use
         self.list_of_ignored = list_of_ignored
+        self.list_of_discarded_subjects = list_of_discarded_subjects
+        self.extracted_schedule = None
 
     def parse_schedule(self):
         """
@@ -38,7 +41,8 @@ class ScheduleParser:
                                       names=self.headers,
                                       header=None,
                                       usecols=self.columns_to_use)
-        return self.extract_days(schedule_file), self.sheet_names, self.headers
+        self.extracted_schedule = self.extract_days(schedule_file)
+        return self.extracted_schedule, self.sheet_names, self.headers
 
     def clean_rows(self, schedule):
         """
@@ -132,10 +136,14 @@ class ScheduleParser:
              (TYPE, SUBJECT, SUBGROUPS)
         """
         def is_tut(title):
-            matches = re.search("^([a-z&. ]+)(tut)?[ ]*[t]?(\d+[,\d]*)[ \S]*$",
+            matches = re.search("^([a-z&. ]+)(tut)?[ ]*[t]?(\d+[, \d]*)[ \S]*$",
                                 title)
             if matches:
-                return ("tut", matches[1], matches[3].split(","))
+                # if 'physics' in title:
+                #     print(str(matches[3].split(",")))
+                # return ("tut", matches[1], matches[3].split(","))
+                return ("tut", matches[1], matches[3].strip(" ").split(","))
+            
             # Special case ex. 2 tut
             matches = re.search("^(\d+)*[ ]*([a-z]+)(,[\S ]*)?$", title)
             if matches:
@@ -229,6 +237,16 @@ class ScheduleParser:
             print("Available locations: " + str(available_locations))
         return location, available_locations
 
+    def is_discarded_slot(self, slot_subject):
+        """
+        Returns true only if the slot_subject has been listed to be discarded
+        """
+        for discarded_subject in self.list_of_discarded_subjects:
+            if discarded_subject == slot_subject.lstrip().rstrip():
+                # print(str(slot_subject) + " is discarded.")
+                return True
+        return False
+            
     def listify_a_slot(self, time, day, group, title, available_locations):
         """
         Converts one scheduled excel titled slot to one or more slot tuple form
@@ -238,7 +256,10 @@ class ScheduleParser:
         day_num = self.sheet_names.index(day)
         slot_num = (time_num - 1) + (day_num * 5)
         slot_type, slot_subject, subgroups = self.get_slot_specific_info(title)
-
+        
+        if self.is_discarded_slot(slot_subject):
+            return [], available_locations
+        
         all_slots = []
         for subgroup in subgroups:
             if "lec" in slot_type:
@@ -256,6 +277,9 @@ class ScheduleParser:
                 (slot_num, slot_subject, slot_type, group, subgroup, location)
             #        if slot_num == 6 and "lec" in slot_type:
             #            print(str(slot_num)+","+slot_subject+","+slot_type+","+group+","+subgroup + "," + str(location))
+            
+            
+            
             all_slots.append(slot_formatted)
 
         return all_slots, available_locations
@@ -269,7 +293,7 @@ class ScheduleParser:
             all_available_locations[time] = [50, 5, 1, 8]
         return all_available_locations
 
-    def listify_slots(self, extracted_schedule):
+    def listify_slots(self):
         """
         Listify schedule in slots form:
             (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, LOCATION)
@@ -277,7 +301,7 @@ class ScheduleParser:
         list_of_formatted_slots = []
         for day in self.sheet_names:
             all_available_locations = self.define_available_locations()
-            day_schedule = extracted_schedule[day]
+            day_schedule = self.extracted_schedule[day]
             for group in day_schedule.keys():
                 group_day = day_schedule[group]
                 for time in self.headers[1:]:
@@ -374,4 +398,4 @@ class ScheduleParser:
                 worksheet.set_column(idx, idx, 40, wrap_format)  # set column width
 
         writer.save()
-                
+    
