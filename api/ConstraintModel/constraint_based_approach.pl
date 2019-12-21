@@ -112,6 +112,30 @@ extract_slots_same_location(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
     extract_slots_same_location(TARGET_NUM, SLOTS, LOCATIONS).
 
 /**
+ * No two slots at the same time are assigned to the same TEACHER.
+ */
+no_slots_assigned_same_teacher(SLOTS):-
+    all_different_teachers_per_slot(29, SLOTS).  
+
+all_different_teachers_per_slot(-1,_).
+all_different_teachers_per_slot(NUM, SLOTS):-
+    NUM >= 0,
+    extract_same_time_slots_teachers(NUM , SLOTS, TEACHERS),
+    all_different(TEACHERS),
+    NEW_NUM #= NUM - 1, 
+    all_different_teachers_per_slot(NEW_NUM, SLOTS).
+
+extract_same_time_slots_teachers(_, [] ,[]).
+extract_same_time_slots_teachers(TARGET_NUM, [SLOT|SLOTS], [TEACHER|TEACHERS]):-  
+    SLOT = (NUM,_,_,_,_,_,TEACHER), 
+    NUM #= TARGET_NUM,
+    extract_same_time_slots_teachers(TARGET_NUM, SLOTS, TEACHERS).
+extract_same_time_slots_teachers(TARGET_NUM, [SLOT|SLOTS], TEACHERS):-
+    SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
+    ANOTHER_NUM #\= TARGET_NUM,
+    extract_same_time_slots_teachers(TARGET_NUM, SLOTS, TEACHERS).
+
+/**
  * Ensure allocation
  * 1. Meeting types -- Assign TYPE LAB to lab resource only
  * 2. Room Type Optimization -- Prioritize usage of non-labs to non-labs
