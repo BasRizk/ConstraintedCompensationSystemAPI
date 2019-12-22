@@ -60,14 +60,12 @@ class ConstraintModelEngine:
         query_statement = self.query_formater.create_query(
             slots_digitized, var_compensation_slot, holiday=holiday)
         # print(query_statement)
-        answers = {}
-        answer_id = 0
+        answers = []
         for option in self.prolog.query(query_statement):
-            answer_id += 1
-            answers[answer_id] = {
+            answers.append({
                 "NUM": str(option["NUM"]),
                 "LOCATION": str(option["LOCATION"])
-            }
+            })
         print(answers)
         return answers
 
