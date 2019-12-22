@@ -128,8 +128,8 @@ class QueryFormater:
                        subjects=True,
                        groups=True,
                        subgroups=True,
-                       subject_inc=None,
-                       subgroup_inc=None):
+                       subjects_inc=None,
+                       subgroups_inc=None):
         """
         Listify seperately with no redundancies
         all subjects, all groups, all subgroups
@@ -153,14 +153,16 @@ class QueryFormater:
             if subgroups:
                 all_subgroups.add(group + subgroup)
 
-        if subject_inc:
-            all_subjects.add(self.convert_to_query_format(subject_inc))
-        if subgroup_inc:
-            all_subgroups.add(self.convert_to_query_format(subgroup_inc))
+        if subjects_inc:
+            for subject in subjects_inc:
+                all_subjects.add(self.convert_to_query_format(subject))
+        if subgroups_inc:
+            for subgroup in subgroups_inc:
+                all_subgroups.add(self.convert_to_query_format(subgroup))
 
         return list(all_subjects), list(all_groups), list(all_subgroups)
 
-    def create_query(self, slots, compensation_slot=None, holiday=0):
+    def create_query(self, slots, compensation_slots=None, holiday=0):
         """
         Create a prolog constraint model query
         """
@@ -176,16 +178,19 @@ class QueryFormater:
             slots_string += self.convert_to_query_format(slot)
             slots_string += ","
 
-        if not compensation_slot:
+        if not compensation_slots:
             slots_string = slots_string[:-1] + "]"
             subjects, groups, subgroups = self.listify_on_own(slots)
         else:
-            comp_slot_string, comp_subject, comp_subgroup = compensation_slot
-            slots_string += comp_slot_string + "]"
+            comp_slots_strings, comp_subjects, comp_subgroups = compensation_slots
+            for comp_string in comp_slots_strings:
+                slots_string += comp_string + ","
+            slots_string = slots_string[:-1] + "]"
+
             subjects, groups, subgroups =\
                 self.listify_on_own(slots,
-                                    subject_inc=comp_subject,
-                                    subgroup_inc=comp_subgroup)
+                                    subjects_inc=comp_subjects,
+                                    subgroups_inc=comp_subgroups)
 
         subjects = self.convert_to_query_format(subjects)
         groups = self.convert_to_query_format(groups)
@@ -193,28 +198,56 @@ class QueryFormater:
         return "schedule(%s,%s,%s,%s,%s)" %\
              (slots_string, str(holiday), subjects, groups, subgroups)
 
-    def turn_to_variable_slot(self, slot):
+    def turn_to_variable_slot(self, slot, index = 0):
         """
         Takes slot to be compensated; and returns it in the required format
         by the constraint model
         """
         _, subject, slot_type, group, subgroup, _, teacher = slot
-        return ("NUM", subject, slot_type, group, subgroup, "LOCATION", teacher)
-
+        
+        return ("NUM" + str(index), subject, slot_type,
+                group, subgroup, "LOCATION" + str(index), teacher)
+    
+    def get_holiday_to_compensate(self, slots, holiday=0):
+        """
+        Returns one whole day all-slots to be compensated; useful for debugging
+        """
+        first_slot_in_holiday = holiday * 5
+        last_slot_in_holiday = (holiday * 5) + 4
+        
+        compensations_subjects = set()
+        compensations_subgroups = set()
+        num_of_compensations = 0
+        all_compensation_slots = []
+        for slot in slots:
+            slot_num, _, _, _, _, _, _ = slot
+            if (slot_num >= first_slot_in_holiday) and \
+                                  (slot_num <= last_slot_in_holiday):
+                
+                digitized_slot = self.digitize_one_slot(slot)
+                _, subject, _, _, subgroup, _, _ = digitized_slot
+                compensations_subgroups.add(subgroup)
+                compensations_subjects.add(subject)
+                slot_string =\
+                    self.convert_to_query_format(\
+                        self.turn_to_variable_slot(digitized_slot,
+                                                   index =\
+                                                       num_of_compensations))
+                num_of_compensations += 1
+                all_compensation_slots.append(slot_string)
+        
+        return all_compensation_slots,\
+                list(compensations_subjects),\
+                list(compensations_subgroups)
+                
+        
+    
     def get_random_slot_to_compensate(self, slots,
                                       # holiday=0,
                                       randomized=False, slot_index=0):
         """
         Returns random or not slot to be compensated; useful for debugging
         """
-        # first_slot_in_holiday = holiday * 5
-        # last_slot_in_holiday = (holiday * 5) + 4
-        # all_compensation_slots = []
-        # for slot in slots:
-        #     slot_num, _, _, _, _, _, _ = slot
-        #     if (slot_num >= first_slot_in_holiday) and \
-        #                          (slot_num <= last_slot_in_holiday):
-        #         all_compensation_slots.append(slot)
         all_compensation_slots = slots
         
         if randomized:
@@ -233,15 +266,12 @@ class QueryFormater:
         
         digitized_slot =\
                     self.digitize_one_slot(slot)
-        _, subject, _, _, subgroup, _, _ = slot
         slot_string =\
             self.convert_to_query_format(self.turn_to_variable_slot(digitized_slot))
 
-
-
         _, subject, _, _, subgroup, _, _ = digitized_slot
 
-        return (slot_string, subject, subgroup), holiday
+        return ([slot_string], [subject], [subgroup]), holiday
 
     def decode_subject(self, encoding):
         """

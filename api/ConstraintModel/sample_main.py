@@ -31,14 +31,18 @@ all_slots = query_formater.clean_formatted_slots(all_slots)
 
 all_slots_digitized = query_formater.digitize(all_slots)
 
-compensation_slot, holiday =\
-    query_formater.get_random_slot_to_compensate(all_slots,
-                                                 randomized = False,
-                                                 slot_index = 400)
-print(holiday)
-print("Compensation slot = " + str(compensation_slot))
+# compensation_slots, holiday =\
+#     query_formater.get_random_slot_to_compensate(all_slots,
+#                                                  randomized = False,
+#                                                  slot_index = 400)
+# print(holiday)
+# print("Compensation slot = " + str(compensation_slots))
 
-query_statement = query_formater.create_query(all_slots_digitized, compensation_slot, holiday)
+holiday = 0
+compensation_slots = query_formater.get_holiday_to_compensate(all_slots,
+                                                              holiday=0)
+
+query_statement = query_formater.create_query(all_slots_digitized, compensation_slots, holiday)
 
 
 print("INIT PROLOG")
