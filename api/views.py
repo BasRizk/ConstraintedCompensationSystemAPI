@@ -92,15 +92,18 @@ class CompensateSlot(APIView):
                 for slot_id in request.data['id']:
                     slot = self.get_object(slot_id=slot_id)
                     if(slot):
-                        print(self.get_object(slot_id=slot_id))
-                        to_compensate_slots.append(self.get_object(slot_id=slot_id))
+                        slot_tuple = self.get_object(slot_id=slot_id)
+                        slot_tuple = (slot_id,) + slot_tuple
+                        print(slot_tuple)
+
+                        to_compensate_slots.append(slot_tuple)
                 
                 print(to_compensate_slots)
-                # if to_compensate_slots:
-                    # schedule_solver = ConstraintModelEngine.get_instance()
-                    # all_slots = self.get_all_objects()
-                    # # schedule_solver.connect_schedule(all_slots)
-                    # # possiblities = schedule_solver.query_model(to_compensate_slots)
+                if to_compensate_slots:
+                    schedule_solver = ConstraintModelEngine.get_instance()
+                    all_slots = self.get_all_objects()
+                    schedule_solver.connect_schedule(all_slots)
+                    possiblities = schedule_solver.query_model(to_compensate_slots)
                 
                 #TODO: Update the next line to return the result "possiblities" instead of "to_compensate_slots"
                 return Response(to_compensate_slots, status=status.HTTP_200_OK)
