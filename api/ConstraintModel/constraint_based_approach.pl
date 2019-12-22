@@ -21,25 +21,20 @@
 % CONSTRAINTS: DOWN BELOW  ||
 %                          \/
 % 
-% TODO minimize LOCATION_TOTAL_COST, when trying to label later
-
 
 schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
     print("Began"), nl,
+    
+    % Extract variables for labeling later
+    extract_variable_slots(SLOTS, VARIABLES),
+    print("VARIABLES = "), print(VARIABLES), nl,
+
     % => The schedules of the tutorial groups. A group can not be assigned 
     % to multiple meetings at the same time.
     ensure_slots(SLOTS, HOLIDAY),
     print("SLOTS ENSURED"), nl,
 
-    % (TIMING, LOCATION)
-    % A room can not be assigned to multiple meetings at the same time.
-    % No slot at the same location at the same time
-    % Ensure allocation of resources
-    no_slots_at_same_location(SLOTS),
-    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
-    print("ALLOCATION ENSURED"), nl,
-    
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
@@ -51,13 +46,20 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     serialize_lecs_per_group(SLOTS, GROUPS),
     print("LEC SERIALIZED PER EACH GROUP"), nl,
     
-    % % (TIMING, TEACHER)
-    % % A staff member can not be assigned to multiple meetings at the same time.
+    % (TIMING, TEACHER)
+    % A staff member can not be assigned to multiple meetings at the same time.
     % no_slots_assigned_same_teacher(SLOTS),
     % print("NO OVERLAPING-TEACHER ENSURED"), nl,
 
-    extract_variable_slots(SLOTS, VAR_SLOTS),
-    labeling([min(LOCATION_TOTAL_COST)], VAR_SLOTS).
+    % (TIMING, LOCATION)
+    % A room can not be assigned to multiple meetings at the same time.
+    % No slot at the same location at the same time
+    % Ensure allocation of resources
+    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
+    no_slots_at_same_location(SLOTS),
+    print("ALLOCATION ENSURED"), nl,
+
+    labeling([min(LOCATION_TOTAL_COST)], VARIABLES).
 
 /**
  * Extract variable slots 
@@ -67,7 +69,7 @@ extract_variable_slots([SLOT|SLOTS], VAR_SLOTS):-
     SLOT = (NUM, _, _, _, _, LOCATION, _),
     nonvar(NUM), nonvar(LOCATION),
     extract_variable_slots(SLOTS, VAR_SLOTS).
-extract_variable_slots([SLOT|SLOTS], [SLOT|VAR_SLOTS]):-
+extract_variable_slots([SLOT|SLOTS], [NUM, LOCATION|VAR_SLOTS]):-
     SLOT = (NUM, _, _, _, _, LOCATION, _),
     var(NUM), var(LOCATION),
     extract_variable_slots(SLOTS, VAR_SLOTS).
@@ -102,7 +104,7 @@ all_different_locations_per_slot(-1,_).
 all_different_locations_per_slot(NUM, SLOTS):-
     NUM >= 0,
     extract_locations_of_same_time_slots(NUM , SLOTS, LOCATIONS),
-    all_different(LOCATIONS),
+    all_distinct(LOCATIONS),
     NEW_NUM #= NUM - 1, 
     all_different_locations_per_slot(NEW_NUM, SLOTS).
 
@@ -126,7 +128,7 @@ all_different_teachers_per_slot(-1,_).
 all_different_teachers_per_slot(NUM, SLOTS):-
     NUM >= 0,
     extract_teachers_of_same_time_slots(NUM , SLOTS, TEACHERS),
-    all_different(TEACHERS),
+    all_distinct(TEACHERS),
     NEW_NUM #= NUM - 1, 
     all_different_teachers_per_slot(NEW_NUM, SLOTS).
 
