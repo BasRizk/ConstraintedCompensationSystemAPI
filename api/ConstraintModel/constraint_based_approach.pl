@@ -48,8 +48,8 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     
     % (TIMING, TEACHER)
     % A staff member can not be assigned to multiple meetings at the same time.
-    % no_slots_assigned_same_teacher(SLOTS),
-    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
+    no_slots_assigned_same_teacher(SLOTS),
+    print("NO OVERLAPING-TEACHER ENSURED"), nl,
 
     % (TIMING, LOCATION)
     % A room can not be assigned to multiple meetings at the same time.

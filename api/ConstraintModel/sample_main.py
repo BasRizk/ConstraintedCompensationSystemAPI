@@ -13,7 +13,13 @@ from query_formater import QueryFormater
 from pyswip import Prolog
 
 parser = ScheduleParserWithTeachers(filename="MET_Winter19_schedule_31131.xlsx",
-                                    teachers_filename="modifiedSchedule2.xlsx")
+                                    teachers_filename="modifiedSchedule2.xlsx",
+                                    list_of_discarded_subjects=['ae','as',
+                                                                'en', 'de',
+                                                                'physics',
+                                                                'embedded systems',
+                                                                'video & audio'])
+# hadwa pasha is teaching video-and-audio-lab, and csen-lab at the same time
 days_schedules, sheet_names, headers = parser.parse_schedule()
 teachers_schedules = parser.parse_teachers_schedules()
 all_slots = parser.listify_slots()
