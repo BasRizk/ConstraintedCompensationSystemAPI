@@ -79,7 +79,7 @@ class ConstraintModelEngine:
         if compensation_slot in self.all_slots:
             holiday = 0
             for day_i in range(4, 30, 5):
-                if slot[0] <= day_i:
+                if compensation_slot[0] <= day_i:
                     break
                 holiday += 1
 
