@@ -40,7 +40,8 @@ all_slots_digitized = query_formater.digitize(all_slots)
 
 holiday = 0
 compensation_slots = query_formater.get_holiday_to_compensate(all_slots,
-                                                              holiday=0)
+                                                              holiday=0,
+                                                              limit=5)
 
 query_statement = query_formater.create_query(all_slots_digitized, compensation_slots, holiday)
 

@@ -208,7 +208,7 @@ class QueryFormater:
         return ("NUM" + str(index), subject, slot_type,
                 group, subgroup, "LOCATION" + str(index), teacher)
     
-    def get_holiday_to_compensate(self, slots, holiday=0):
+    def get_holiday_to_compensate(self, slots, holiday=0, limit=0):
         """
         Returns one whole day all-slots to be compensated; useful for debugging
         """
@@ -220,6 +220,9 @@ class QueryFormater:
         num_of_compensations = 0
         all_compensation_slots = []
         for slot in slots:
+            limit -= 1
+            if limit == 0:
+                break
             slot_num, _, _, _, _, _, _ = slot
             if (slot_num >= first_slot_in_holiday) and \
                                   (slot_num <= last_slot_in_holiday):

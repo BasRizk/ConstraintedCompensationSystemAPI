@@ -40,46 +40,65 @@ class ConstraintModelEngine:
         # self.days_schedules = None
         self.all_slots = all_slots
 
-    # def connect_schedule(self):
-    #     """
-    #     Reads the static schedule saved in the system
-    #     """
-    #     self.days_schedules, sheet_names, headers = self.parser.parse_schedule(
-    #     )
-    #     self.all_slots = self.parser.listify_slots(self.days_schedules)
-    #     self.all_slots = self.query_formater.clean_formatted_slots(
-    #         self.all_slots)
-
-    def query_model(self, compensation_slot):
+    def query_model(self, compensation_slots):
         """
         Creates a query to the constraint model
         """
+        def ids_aside(compensation_slots):
+            """
+            Split tuples coming from DB and put aside the ids
+            """
+            slots = []
+            ids = []
+            for slot in compensation_slots:
+                _id, num, subject, _type, subgroup, group, location = slot
+                slots.append((num, subject, _type, subgroup, group, location))
+                ids.append(_id)
+            return slots, ids
+            
         slots_digitized = self.query_formater.digitize(self.all_slots)
-        var_compensation_slot, holiday = self.ready_compensation(
-            compensation_slot)
+
+        compensation_slots_no_ids, compensation_ids = ids_aside(compensation_slots)
+        variable_slots, holiday = self.ready_compensation(
+            compensation_slots_no_ids)
+
+        if not variable_slots:
+            return {"msg": "Not implemented yet to compensate on\
+                            different days at the same time"}
+
         query_statement = self.query_formater.create_query(
-            slots_digitized, var_compensation_slot, holiday=holiday)
+            slots_digitized, variable_slots, holiday=holiday)
         # print(query_statement)
         answers = []
         for option in self.prolog.query(query_statement):
-            answers.append({
-                "NUM": str(option["NUM"]),
-                "LOCATION": str(option["LOCATION"])
-            })
-        print(answers)
-        return answers
+            one_answer = {}
+            for _id in compensation_ids:
+                num_var = "NUM" + str(_id)
+                location_var = "LOCATION" + str(_id)
+                one_answer[num_var] = str(option[num_var])
+                one_answer[location_var] = str(option[location_var])
+            answers.append(one_answer)
 
-    def ready_compensation(self, compensation_slot):
+        # print(answers)
+        return answers
+    
+    def ready_compensation(self, compensation_slots):
         """
         Ensure validity of a slot and make it ready for query
         """
+        slot_strings = []
+        subjects = set()
+        subgroups = set()
+        holidays = set()
         # print(compensation_slot)
-        if compensation_slot in self.all_slots:
+        for compensation_slot in compensation_slots:
+            # if compensation_slot in self.all_slots:
             holiday = 0
             for day_i in range(4, 30, 5):
                 if compensation_slot[0] <= day_i:
                     break
                 holiday += 1
+            holidays.add(holiday)
 
             digitized_slot =\
                 self.query_formater.digitize_one_slot(compensation_slot)
@@ -88,8 +107,17 @@ class ConstraintModelEngine:
             slot_string =\
                 self.query_formater.convert_to_query_format(variable_slot)
             _, subject, _, _, subgroup, _, _ = digitized_slot
+            slot_strings.append(slot_string)
+            subjects.add(subject)
+            subgroups.add(subgroup)
+            # else:
+            #     print("Slot: " + str(compensation_slot) + " does not exist")
+        holidays = list(holidays)
+        if len(holidays) != 1:
+            print("Not implemented yet compensation on more than one day!")
+            return None, -1
 
-            return (slot_string, subject, subgroup), holiday
+        return (slot_strings, list(subjects), list(subgroups)), holiday
 
     def decode_slot(self, slot):
         """
@@ -101,43 +129,3 @@ class ConstraintModelEngine:
         group = self.query_formater.decode_group(group)
         subgroup = self.query_formater.decode_subgroup(subgroup)
         return num, subject, slot_type, group, subgroup, location, teacher
-
-    # def get_all_groups(self):
-    #     """
-    #     Lists the set of all study groups
-    #     """
-    #     _, groups, _ =\
-    #         self.query_formater.listify_on_own(self.all_slots,
-    #                                            subjects=False,
-    #                                            subgroups=False)
-    #     return sorted(groups)
-
-    # def get_group_slots(self, target_group, json_format=False):
-    #     """
-    #     Lists all slots of specific group
-    #     """
-
-    #     # import json
-
-    #     target_group = target_group.replace("_", " ").lower()
-    #     group_slots = []
-    #     for slot in self.all_slots:
-    #         num, subject, slot_type, group, subgroup, location = slot
-    #         if group.lower() == target_group:
-    #             if json_format:
-    #                 slot = {
-    #                     "slot_num": str(num),
-    #                     "slot_subject": str(subject),
-    #                     "slot_type": str(slot_type),
-    #                     "slot_group": str(group),
-    #                     "slot_subgroup": str(subgroup),
-    #                     "slot_location": str(location)
-    #                 }
-    #                 group_slots.append(slot)
-    #             else:
-    #                 group_slots.append(slot)
-
-    #     if json_format:
-    #         group_slots = json.dumps(group_slots)
-
-    #     return group_slots
