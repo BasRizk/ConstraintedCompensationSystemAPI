@@ -4,3 +4,4 @@ numpy
 pyswip
 django
 django-cors-headers
+djangorestframework
