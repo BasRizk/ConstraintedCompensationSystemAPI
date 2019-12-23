@@ -250,6 +250,9 @@ class QueryFormater:
                 if limit == num_of_compensations:
                     break
         
+        if verbose:
+            print("Got " + str(num_of_compensations) + " compensation slots.")
+        
         return all_compensation_slots,\
                 list(compensations_subjects),\
                 list(compensations_subgroups)
