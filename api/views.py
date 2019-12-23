@@ -69,21 +69,6 @@ class CompensateSlot(APIView):
                 'slot_subgroup', 'slot_location',
                 'slot_teacher'))
 
-    def get(self, request, slot_id=None):
-        """
-        Get possible compensations of this slot
-        """
-        to_compensate_slot = self.get_object(slot_id=slot_id)
-
-        if to_compensate_slot:
-            schedule_solver = ConstraintModelEngine.get_instance()
-            all_slots = self.get_all_objects()
-            schedule_solver.connect_schedule(all_slots)
-            possiblities = schedule_solver.query_model(to_compensate_slot)
-            return Response(possiblities, status=status.HTTP_200_OK)
-
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
     def post(self, request):
         if request.method == 'POST':
             if(request.data['id']):
@@ -94,19 +79,15 @@ class CompensateSlot(APIView):
                     if(slot):
                         slot_tuple = self.get_object(slot_id=slot_id)
                         slot_tuple = (slot_id,) + slot_tuple
-                        print(slot_tuple)
-
                         to_compensate_slots.append(slot_tuple)
                 
-                print(to_compensate_slots)
                 if to_compensate_slots:
                     schedule_solver = ConstraintModelEngine.get_instance()
                     all_slots = self.get_all_objects()
                     schedule_solver.connect_schedule(all_slots)
                     possiblities = schedule_solver.query_model(to_compensate_slots)
-                
-                #TODO: Update the next line to return the result "possiblities" instead of "to_compensate_slots"
-                return Response(to_compensate_slots, status=status.HTTP_200_OK)
+                    return Response(possiblities, status=status.HTTP_200_OK)
+
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     # def delete(self, request, pk, format=None):
