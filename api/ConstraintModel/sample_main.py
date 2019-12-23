@@ -31,26 +31,25 @@ all_slots = query_formater.clean_formatted_slots(all_slots)
 
 all_slots_digitized = query_formater.digitize(all_slots)
 
-# compensation_slots, holiday =\
-#     query_formater.get_random_slot_to_compensate(all_slots,
-#                                                  randomized = False,
-#                                                  slot_index = 400)
-# print(holiday)
-# print("Compensation slot = " + str(compensation_slots))
 
-holiday = 5
+holiday = 2
+group = "1engineering i"
 compensation_slots = query_formater.get_holiday_to_compensate(all_slots,
+                                                              specific_group=None,
                                                               holiday=holiday,
-                                                              limit=5)
-
+                                                              limit=0,
+                                                              verbose=True)
+print(compensation_slots)
 query_statement = query_formater.create_query(all_slots_digitized, compensation_slots, holiday)
-
 
 print("INIT PROLOG")
 prolog = Prolog()
 prolog.consult("constraint_based_approach.pl")
+query_answers = prolog.query(query_statement)
+num_of_sols = 0
 for soln in prolog.query(query_statement):
-    print(soln)
+    num_of_sols += 1
+    print("Solution " + str(num_of_sols) + " :: "  + str(soln))
 print("END PROLOG")
 
 

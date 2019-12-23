@@ -208,7 +208,9 @@ class QueryFormater:
         return ("NUM" + str(index), subject, slot_type,
                 group, subgroup, "LOCATION" + str(index), teacher)
     
-    def get_holiday_to_compensate(self, slots, holiday=0, limit=0):
+    def get_holiday_to_compensate(self, slots, holiday=0,
+                                  specific_group=None, limit=0,
+                                  verbose=False):
         """
         Returns one whole day all-slots to be compensated; useful for debugging
         """
@@ -220,24 +222,33 @@ class QueryFormater:
         num_of_compensations = 0
         all_compensation_slots = []
         for slot in slots:
-        
-            slot_num, _, _, _, _, _, _ = slot
+            slot_num, _, _, group, subgroup, _, _ = slot
+            if specific_group:
+                    if specific_group != group:
+                        continue
+                    
             if (slot_num >= first_slot_in_holiday) and \
                                   (slot_num <= last_slot_in_holiday):
-                limit -= 1
-                if limit == 0:
-                    break
+                    
                 digitized_slot = self.digitize_one_slot(slot)
+            
                 _, subject, _, _, subgroup, _, _ = digitized_slot
-                compensations_subgroups.add(subgroup)
                 compensations_subjects.add(subject)
+                compensations_subgroups.add(subgroup)
+
                 slot_string =\
                     self.convert_to_query_format(\
                         self.turn_to_variable_slot(digitized_slot,
                                                    index =\
                                                        num_of_compensations))
+                
+                if verbose:
+                    print(str(slot))
+                    
                 num_of_compensations += 1
-                all_compensation_slots.append(slot_string)
+                all_compensation_slots.append(slot_string)    
+                if limit == num_of_compensations:
+                    break
         
         return all_compensation_slots,\
                 list(compensations_subjects),\
