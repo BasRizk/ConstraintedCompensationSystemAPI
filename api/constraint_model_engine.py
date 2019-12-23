@@ -44,33 +44,26 @@ class ConstraintModelEngine:
         """
         Creates a query to the constraint model
         """
-        def ids_aside(compensation_slots):
-            """
-            Split tuples coming from DB and put aside the ids
-            """
-            slots = []
-            ids = []
-            for slot in compensation_slots:
-                _id, num, subject, _type, subgroup, group, location = slot
-                slots.append((num, subject, _type, subgroup, group, location))
-                ids.append(_id)
-            return slots, ids
             
         slots_digitized = self.query_formater.digitize(self.all_slots)
 
-        compensation_slots_no_ids, compensation_ids = ids_aside(compensation_slots)
-        variable_slots, holiday = self.ready_compensation(
-            compensation_slots_no_ids)
-
+        variable_slots, compensation_ids, holiday =\
+             self.ready_compensation(compensation_slots)
+        # print(variable_slots)
+        # print(compensation_ids)
+        # print(holiday)
         if not variable_slots:
             return {"msg": "Not implemented yet to compensate on\
                             different days at the same time"}
 
         query_statement = self.query_formater.create_query(
             slots_digitized, variable_slots, holiday=holiday)
+    
         # print(query_statement)
+
         answers = []
         for option in self.prolog.query(query_statement):
+            # print("RESULT: " + str(option))
             one_answer = {}
             for _id in compensation_ids:
                 num_var = "NUM" + str(_id)
@@ -86,7 +79,10 @@ class ConstraintModelEngine:
         """
         Ensure validity of a slot and make it ready for query
         """
+
         slot_strings = []
+        ids = []
+
         subjects = set()
         subgroups = set()
         holidays = set()
@@ -94,20 +90,25 @@ class ConstraintModelEngine:
         for compensation_slot in compensation_slots:
             # if compensation_slot in self.all_slots:
             holiday = 0
-            for day_i in range(4, 30, 5):
+            for day_i in range(4, 29, 5):
                 if compensation_slot[0] <= day_i:
                     break
                 holiday += 1
             holidays.add(holiday)
+            
+            _id, num, subject, _type, subgroup, group, location, teacher = compensation_slot
+            compensation_slot = (num, subject, _type, subgroup, group, location, teacher)
 
             digitized_slot =\
                 self.query_formater.digitize_one_slot(compensation_slot)
             variable_slot =\
-                self.query_formater.turn_to_variable_slot(digitized_slot)
+                self.query_formater.turn_to_variable_slot(digitized_slot, index=_id)
             slot_string =\
                 self.query_formater.convert_to_query_format(variable_slot)
             _, subject, _, _, subgroup, _, _ = digitized_slot
+            
             slot_strings.append(slot_string)
+            ids.append(_id)
             subjects.add(subject)
             subgroups.add(subgroup)
             # else:
@@ -117,7 +118,7 @@ class ConstraintModelEngine:
             print("Not implemented yet compensation on more than one day!")
             return None, -1
 
-        return (slot_strings, list(subjects), list(subgroups)), holiday
+        return (slot_strings, list(subjects), list(subgroups)), ids, holidays[0]
 
     def decode_slot(self, slot):
         """
