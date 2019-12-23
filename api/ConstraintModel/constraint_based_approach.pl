@@ -28,7 +28,7 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     
     % Extract variables for labeling later
     extract_variables(SLOTS, VARIABLES),
-    print("VARIABLES = "), print(VARIABLES), nl,
+    % print("VARIABLES = "), print(VARIABLES), nl,
 
     % TODO COMPLETE
     % A group can not be assigned to multiple meetings at the same time.
@@ -36,34 +36,34 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % (TIMING, HOLIDAY)
     % Ensure proper domains on slots timings
     ensure_slots(SLOTS, HOLIDAY),
-    print("TIMINGS DOMAIN ENSURED"), nl,
+    % print("TIMINGS DOMAIN ENSURED"), nl,
 
 
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
     serialize_subgroups(SLOTS, SUBGROUPS),
-    print("SUBGROUPS SERIALIZED"), nl,
+    % print("SUBGROUPS SERIALIZED"), nl,
 
     % (TIMING, TYPE, GROUP)
     % No more than one lec given to the same group at the same time
     serialize_lecs_per_group(SLOTS, GROUPS),
-    print("LEC SERIALIZED PER EACH GROUP"), nl,
+    % print("LEC SERIALIZED PER EACH GROUP"), nl,
     
     % (TIMING, LOCATION)
     % Ensure allocation of resources
     ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
-    print("LOCATIONS DOMAIN ENSURED"), nl,
+    % print("LOCATIONS DOMAIN ENSURED"), nl,
 
     % (TIMING, LOCATION)
     % A room can not be assigned to multiple meetings at the same time.
     no_slots_at_same_location(SLOTS),
-    print("NO OVERLAPING-LOCATION ENSURED"), nl,
+    % print("NO OVERLAPING-LOCATION ENSURED"), nl,
 
     % (TIMING, TEACHER)
     % A staff member can not be assigned to multiple meetings at the same time.
     no_slots_assigned_same_teacher(SLOTS),
-    print("NO OVERLAPING-TEACHER ENSURED"), nl,
+    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
 
     once(labeling([min(LOCATION_TOTAL_COST)], VARIABLES)).
 

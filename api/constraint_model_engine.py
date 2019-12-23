@@ -13,7 +13,7 @@ class ConstraintModelEngine:
     PL_FILENAME = "api\\\\ConstraintModel\\\\constraint_based_approach.pl"
 
     __instance = None
-
+    _query_lock = False
     @staticmethod
     def get_instance():
         """ Static access method. """
@@ -40,11 +40,14 @@ class ConstraintModelEngine:
         # self.days_schedules = None
         self.all_slots = all_slots
 
-    def query_model(self, compensation_slots):
+    def query_model(self, compensation_slots, answers_limit=0):
         """
         Creates a query to the constraint model
         """
-            
+        while self._query_lock:
+            pass
+        self._query_lock = True
+
         slots_digitized = self.query_formater.digitize(self.all_slots)
 
         variable_slots, compensation_ids, holiday =\
@@ -71,7 +74,12 @@ class ConstraintModelEngine:
                 one_answer[num_var] = str(option[num_var])
                 one_answer[location_var] = str(option[location_var])
             answers.append(one_answer)
-
+            
+            answers_limit -= 1
+            if answers_limit == 0:
+                break
+        
+        self._query_lock = False
         # print(answers)
         return answers
     
