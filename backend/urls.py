@@ -26,7 +26,6 @@ urlpatterns = [
     path('all_slots/<str:group_name>', views.AllSlots.as_view()),
     path('all_groups', views.AllGroups.as_view()),
     path('compensate/', views.CompensateSlot.as_view()),
-    path('compensate/<int:slot_id>', views.CompensateSlot.as_view()),
 ]
 #   + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
