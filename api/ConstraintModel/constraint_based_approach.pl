@@ -27,52 +27,62 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     print("Began"), nl,
     
     % Extract variables for labeling later
-    extract_variable_slots(SLOTS, VARIABLES),
-    % print("VARIABLES = "), print(VARIABLES), nl,
+    extract_variables(SLOTS, VARIABLES),
+    print("VARIABLES = "), print(VARIABLES), nl,
 
-    % => The schedules of the tutorial groups. A group can not be assigned 
-    % to multiple meetings at the same time.
+    % Split slots in vars and nonvars (to be compensated) for optimization later 
+    % once(split_slots_vars_nonvars(SLOTS, VAR_SLOTS, NONVAR_SLOTS)),
+    % print("SPLIT SLOTS INTO VARS AND NONVARS"), nl,
+
+    % TODO COMPLETE
+    % A group can not be assigned to multiple meetings at the same time.
+    
+    % (TIMING, HOLIDAY)
+    % Ensure proper domains on slots timings
     ensure_slots(SLOTS, HOLIDAY),
-    % print("SLOTS ENSURED"), nl,
+    print("TIMINGS DOMAIN ENSURED"), nl,
+
 
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
     serialize_subgroups(SLOTS, SUBGROUPS),
-    % print("SUBGROUPS SERIALIZED"), nl,
+    print("SUBGROUPS SERIALIZED"), nl,
 
     % (TIMING, TYPE, GROUP)
     % No more than one lec given to the same group at the same time
     serialize_lecs_per_group(SLOTS, GROUPS),
-    % print("LEC SERIALIZED PER EACH GROUP"), nl,
+    print("LEC SERIALIZED PER EACH GROUP"), nl,
     
-    % (TIMING, TEACHER)
-    % A staff member can not be assigned to multiple meetings at the same time.
-    no_slots_assigned_same_teacher(SLOTS),
-    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
+    % (TIMING, LOCATION)
+    % Ensure allocation of resources
+    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
+    print("LOCATIONS DOMAIN ENSURED"), nl,
 
     % (TIMING, LOCATION)
     % A room can not be assigned to multiple meetings at the same time.
-    % No slot at the same location at the same time
-    % Ensure allocation of resources
-    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
     no_slots_at_same_location(SLOTS),
-    % print("ALLOCATION ENSURED"), nl,
+    print("NO OVERLAPING-LOCATION ENSURED"), nl,
+
+    % (TIMING, TEACHER)
+    % A staff member can not be assigned to multiple meetings at the same time.
+    no_slots_assigned_same_teacher(SLOTS),
+    print("NO OVERLAPING-TEACHER ENSURED"), nl,
 
     once(labeling([min(LOCATION_TOTAL_COST)], VARIABLES)).
 
 /**
- * Extract variable slots 
+ * Extract variables from slots (NUM, LOCATION)
  */
-extract_variable_slots([], []).
-extract_variable_slots([SLOT|SLOTS], VAR_SLOTS):-
+extract_variables([], []).
+extract_variables([SLOT|SLOTS], VAR_SLOTS):-
     SLOT = (NUM, _, _, _, _, LOCATION, _),
     nonvar(NUM), nonvar(LOCATION),
-    extract_variable_slots(SLOTS, VAR_SLOTS).
-extract_variable_slots([SLOT|SLOTS], [NUM, LOCATION|VAR_SLOTS]):-
+    extract_variables(SLOTS, VAR_SLOTS).
+extract_variables([SLOT|SLOTS], [NUM, LOCATION|VAR_SLOTS]):-
     SLOT = (NUM, _, _, _, _, LOCATION, _),
     var(NUM), var(LOCATION),
-    extract_variable_slots(SLOTS, VAR_SLOTS).
+    extract_variables(SLOTS, VAR_SLOTS).
 
 /**
  * Ensure slots structure, and NUM of slot validity
@@ -103,10 +113,57 @@ no_slots_at_same_location(SLOTS):-
 all_different_locations_per_slot(-1,_).
 all_different_locations_per_slot(NUM, SLOTS):-
     NUM >= 0,
-    extract_locations_of_same_time_slots(NUM , SLOTS, LOCATIONS),
+    % Once as there are two many possiblities of the same permutation of the LOCATIONS list
+    % because there might be huge number of variables!
+    % print("To Extract Locations of NUM "), print(NUM), nl,
+    % once(extract_locations_of_same_time_slots(NUM, NONVAR_SLOTS, NONVAR_LOCATIONS)),
+    % print("Extracted NONVAR Locations of NUM"), print(NUM), nl,
+    % extract_locations_of_same_time_slots(NUM , VAR_SLOTS, VAR_LOCATIONS),
+    % print("Extracted VAR Locations of NUM"), print(NUM), nl,
+    % append(NONVAR_LOCATIONS, VAR_LOCATIONS, LOCATIONS),
+    % append(VAR_SLOTS, NONVAR_SLOTS, SLOTS),
+    extract_locations_of_same_time_slots(NUM, SLOTS, LOCATIONS),
     all_distinct(LOCATIONS),
-    NEW_NUM #= NUM - 1, 
+    % print("All_distinct Ensured"), nl,
+    NEW_NUM #= NUM - 1,
+    % print(NUM), nl,
     all_different_locations_per_slot(NEW_NUM, SLOTS).
+
+% set_of_locations(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS], MAX_NUM_OF_CLASS_A):-
+%     MAX_NUM_OF_CLASS_A >= 0,
+
+% ASSUMING BOTH ARE VARIABLES TOGETHER ALWAYS (NUM, LOCATION)
+split_slots_vars_nonvars([], [], []).
+split_slots_vars_nonvars([SLOT|SLOTS], VAR_SLOTS, [SLOT|NONVAR_SLOTS]):-
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
+    nonvar(NUM), nonvar(LOCATION),
+    % print("HERE 1"), nl,
+    split_slots_vars_nonvars(SLOTS, VAR_SLOTS, NONVAR_SLOTS).
+split_slots_vars_nonvars([SLOT|SLOTS], [SLOT|VAR_SLOTS], NONVAR_SLOTS):-
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
+    var(NUM), var(LOCATION),
+    % print("HERE 2"), nl,
+    split_slots_vars_nonvars(SLOTS, VAR_SLOTS, NONVAR_SLOTS).
+
+% extract_var_locations_of_same_time_slots(_, [] ,[]).
+% extract_var_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
+%     SLOT = (NUM,_,_,_,_,LOCATION, _), 
+%     NUM #= TARGET_NUM, var(NUM),
+%     extract_var_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
+% extract_var_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
+%     SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
+%     ANOTHER_NUM #\= TARGET_NUM,
+%     extract_var_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
+
+% extract_nonvar_locations_of_same_time_slots(_, [] ,[]).
+% extract_nonvar_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
+%     SLOT = (NUM,_,_,_,_,LOCATION, _), 
+%     NUM #= TARGET_NUM, nonvar(NUM),
+%     extract_nonvar_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
+% extract_nonvar_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
+%     SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
+%     (ANOTHER_NUM #\= TARGET_NUM; var(ANOTHER_NUM)),
+%     extract_nonvar_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
 
 extract_locations_of_same_time_slots(_, [] ,[]).
 extract_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
