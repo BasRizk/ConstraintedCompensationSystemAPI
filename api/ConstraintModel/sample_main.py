@@ -37,11 +37,15 @@ group = "5 csen i"
 compensation_slots = query_formater.get_holiday_to_compensate(all_slots,
                                                               specific_group=group,
                                                               holiday=holiday,
-                                                              limit=5,
-                                                              verbose=True)
-print(compensation_slots)
-query_statement = query_formater.create_query(all_slots_digitized, compensation_slots, holiday)
+                                                              limit=20,
+                                                              verbose=False)
 
+query_statement = query_formater.create_query(all_slots_digitized,
+                                              compensation_slots,
+                                              holiday)
+
+
+limit = 2
 print("INIT PROLOG")
 prolog = Prolog()
 prolog.consult("constraint_based_approach.pl")
@@ -50,6 +54,8 @@ num_of_sols = 0
 for soln in prolog.query(query_statement):
     num_of_sols += 1
     print("Solution " + str(num_of_sols) + " :: "  + str(soln))
+    if limit == num_of_sols:
+        break
 print("END PROLOG")
 
 
