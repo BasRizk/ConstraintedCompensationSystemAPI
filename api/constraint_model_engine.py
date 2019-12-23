@@ -53,8 +53,8 @@ class ConstraintModelEngine:
         # print(compensation_ids)
         # print(holiday)
         if not variable_slots:
-            return {"msg": "Not implemented yet to compensate on\
-                            different days at the same time"}
+            return {"msg": "Not implemented yet to compensate on" +
+                            "different days at the same time"}
 
         query_statement = self.query_formater.create_query(
             slots_digitized, variable_slots, holiday=holiday)
@@ -88,16 +88,16 @@ class ConstraintModelEngine:
         holidays = set()
         # print(compensation_slot)
         for compensation_slot in compensation_slots:
-            # if compensation_slot in self.all_slots:
+            
+            _id, num, subject, _type, subgroup, group, location, teacher = compensation_slot
+            compensation_slot = (num, subject, _type, subgroup, group, location, teacher)
+
             holiday = 0
             for day_i in range(4, 29, 5):
                 if compensation_slot[0] <= day_i:
                     break
                 holiday += 1
             holidays.add(holiday)
-            
-            _id, num, subject, _type, subgroup, group, location, teacher = compensation_slot
-            compensation_slot = (num, subject, _type, subgroup, group, location, teacher)
 
             digitized_slot =\
                 self.query_formater.digitize_one_slot(compensation_slot)
@@ -111,12 +111,12 @@ class ConstraintModelEngine:
             ids.append(_id)
             subjects.add(subject)
             subgroups.add(subgroup)
-            # else:
-            #     print("Slot: " + str(compensation_slot) + " does not exist")
+
         holidays = list(holidays)
+        # print(holidays)
         if len(holidays) != 1:
             print("Not implemented yet compensation on more than one day!")
-            return None, -1
+            return None, None, -1
 
         return (slot_strings, list(subjects), list(subgroups)), ids, holidays[0]
 
