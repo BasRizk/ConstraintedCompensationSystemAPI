@@ -30,10 +30,6 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     extract_variables(SLOTS, VARIABLES),
     print("VARIABLES = "), print(VARIABLES), nl,
 
-    % Split slots in vars and nonvars (to be compensated) for optimization later 
-    % once(split_slots_vars_nonvars(SLOTS, VAR_SLOTS, NONVAR_SLOTS)),
-    % print("SPLIT SLOTS INTO VARS AND NONVARS"), nl,
-
     % TODO COMPLETE
     % A group can not be assigned to multiple meetings at the same time.
     
@@ -113,15 +109,6 @@ no_slots_at_same_location(SLOTS):-
 all_different_locations_per_slot(-1,_).
 all_different_locations_per_slot(NUM, SLOTS):-
     NUM >= 0,
-    % Once as there are two many possiblities of the same permutation of the LOCATIONS list
-    % because there might be huge number of variables!
-    % print("To Extract Locations of NUM "), print(NUM), nl,
-    % once(extract_locations_of_same_time_slots(NUM, NONVAR_SLOTS, NONVAR_LOCATIONS)),
-    % print("Extracted NONVAR Locations of NUM"), print(NUM), nl,
-    % extract_locations_of_same_time_slots(NUM , VAR_SLOTS, VAR_LOCATIONS),
-    % print("Extracted VAR Locations of NUM"), print(NUM), nl,
-    % append(NONVAR_LOCATIONS, VAR_LOCATIONS, LOCATIONS),
-    % append(VAR_SLOTS, NONVAR_SLOTS, SLOTS),
     extract_locations_of_same_time_slots(NUM, SLOTS, LOCATIONS),
     all_distinct(LOCATIONS),
     % print("All_distinct Ensured"), nl,
@@ -131,39 +118,6 @@ all_different_locations_per_slot(NUM, SLOTS):-
 
 % set_of_locations(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS], MAX_NUM_OF_CLASS_A):-
 %     MAX_NUM_OF_CLASS_A >= 0,
-
-% ASSUMING BOTH ARE VARIABLES TOGETHER ALWAYS (NUM, LOCATION)
-split_slots_vars_nonvars([], [], []).
-split_slots_vars_nonvars([SLOT|SLOTS], VAR_SLOTS, [SLOT|NONVAR_SLOTS]):-
-    SLOT = (NUM, _, _, _, _, LOCATION, _),
-    nonvar(NUM), nonvar(LOCATION),
-    % print("HERE 1"), nl,
-    split_slots_vars_nonvars(SLOTS, VAR_SLOTS, NONVAR_SLOTS).
-split_slots_vars_nonvars([SLOT|SLOTS], [SLOT|VAR_SLOTS], NONVAR_SLOTS):-
-    SLOT = (NUM, _, _, _, _, LOCATION, _),
-    var(NUM), var(LOCATION),
-    % print("HERE 2"), nl,
-    split_slots_vars_nonvars(SLOTS, VAR_SLOTS, NONVAR_SLOTS).
-
-% extract_var_locations_of_same_time_slots(_, [] ,[]).
-% extract_var_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
-%     SLOT = (NUM,_,_,_,_,LOCATION, _), 
-%     NUM #= TARGET_NUM, var(NUM),
-%     extract_var_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
-% extract_var_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
-%     SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
-%     ANOTHER_NUM #\= TARGET_NUM,
-%     extract_var_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
-
-% extract_nonvar_locations_of_same_time_slots(_, [] ,[]).
-% extract_nonvar_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  
-%     SLOT = (NUM,_,_,_,_,LOCATION, _), 
-%     NUM #= TARGET_NUM, nonvar(NUM),
-%     extract_nonvar_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
-% extract_nonvar_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], LOCATIONS):-
-%     SLOT = (ANOTHER_NUM,_,_,_,_,_,_),
-%     (ANOTHER_NUM #\= TARGET_NUM; var(ANOTHER_NUM)),
-%     extract_nonvar_locations_of_same_time_slots(TARGET_NUM, SLOTS, LOCATIONS).
 
 extract_locations_of_same_time_slots(_, [] ,[]).
 extract_locations_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS]):-  

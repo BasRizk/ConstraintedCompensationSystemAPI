@@ -37,7 +37,7 @@ group = "1engineering i"
 compensation_slots = query_formater.get_holiday_to_compensate(all_slots,
                                                               specific_group=None,
                                                               holiday=holiday,
-                                                              limit=0,
+                                                              limit=5,
                                                               verbose=True)
 print(compensation_slots)
 query_statement = query_formater.create_query(all_slots_digitized, compensation_slots, holiday)

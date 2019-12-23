@@ -195,7 +195,7 @@ class QueryFormater:
         subjects = self.convert_to_query_format(subjects)
         groups = self.convert_to_query_format(groups)
         subgroups = self.convert_to_query_format(subgroups)
-        return "schedule(%s,%s,%s,%s,%s)" %\
+        return "schedule(%s,%s,%s,%s,%s)." %\
              (slots_string, str(holiday), subjects, groups, subgroups)
 
     def turn_to_variable_slot(self, slot, index = 0):
