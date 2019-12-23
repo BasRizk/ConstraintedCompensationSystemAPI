@@ -220,13 +220,13 @@ class QueryFormater:
         num_of_compensations = 0
         all_compensation_slots = []
         for slot in slots:
-            limit -= 1
-            if limit == 0:
-                break
+        
             slot_num, _, _, _, _, _, _ = slot
             if (slot_num >= first_slot_in_holiday) and \
                                   (slot_num <= last_slot_in_holiday):
-                
+                limit -= 1
+                if limit == 0:
+                    break
                 digitized_slot = self.digitize_one_slot(slot)
                 _, subject, _, _, subgroup, _, _ = digitized_slot
                 compensations_subgroups.add(subgroup)
