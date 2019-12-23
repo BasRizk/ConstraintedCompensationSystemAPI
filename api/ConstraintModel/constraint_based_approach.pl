@@ -50,6 +50,11 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     serialize_lecs_per_group(SLOTS, GROUPS),
     % print("LEC SERIALIZED PER EACH GROUP"), nl,
     
+    % (TIMING, TEACHER)
+    % A staff member can not be assigned to multiple meetings at the same time.
+    no_slots_assigned_same_teacher(SLOTS),
+    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
+
     % (TIMING, LOCATION)
     % Ensure allocation of resources
     ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
@@ -60,10 +65,7 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     no_slots_at_same_location(SLOTS),
     % print("NO OVERLAPING-LOCATION ENSURED"), nl,
 
-    % (TIMING, TEACHER)
-    % A staff member can not be assigned to multiple meetings at the same time.
-    no_slots_assigned_same_teacher(SLOTS),
-    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
+
 
     once(labeling([min(LOCATION_TOTAL_COST)], VARIABLES)).
 

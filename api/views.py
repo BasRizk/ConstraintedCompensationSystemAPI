@@ -78,7 +78,7 @@ class CompensateSlot(APIView):
 
                 limit = request.data.get('limit')
                 if not limit:
-                    limit = 10
+                    limit = 2
 
                 to_compensate_slots = []
                 for slot_id in ids_to_compensate:
