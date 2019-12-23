@@ -59,7 +59,7 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     no_slots_at_same_location(SLOTS),
     % print("ALLOCATION ENSURED"), nl,
 
-    labeling([min(LOCATION_TOTAL_COST)], VARIABLES).
+    once(labeling([min(LOCATION_TOTAL_COST)], VARIABLES)).
 
 /**
  * Extract variable slots 
