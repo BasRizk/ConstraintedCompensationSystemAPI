@@ -25,47 +25,48 @@
 schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
     print("Began"), nl,
+
+    % (TIMING, SUBJECT(lec), SUBJECT_i_(nonlec))
+    % No group assigned a lec and some tut. or lab at the same time of the same subject
+    % TODO assure A group can not be assigned to multiple meetings at the same time.
+    serialize_each_lec_with_its_companions(SLOTS),
+    print("EACH LECS SERAILIZED WITH EACH OF ITS COMPANIONS"), nl,
     
     % Extract variables for labeling later
     extract_variables(SLOTS, VARIABLES),
-    % print("VARIABLES = "), print(VARIABLES), nl,
+    print("VARIABLES = "), print(VARIABLES), nl,
 
-    % TODO COMPLETE
-    % A group can not be assigned to multiple meetings at the same time.
-    
     % (TIMING, HOLIDAY)
     % Ensure proper domains on slots timings
     ensure_slots(SLOTS, HOLIDAY),
-    % print("TIMINGS DOMAIN ENSURED"), nl,
+    print("TIMINGS DOMAIN ENSURED"), nl,
 
 
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
     serialize_subgroups(SLOTS, SUBGROUPS),
-    % print("SUBGROUPS SERIALIZED"), nl,
+    print("SUBGROUPS SERIALIZED"), nl,
 
     % (TIMING, TYPE, GROUP)
     % No more than one lec given to the same group at the same time
-    serialize_lecs_per_group(SLOTS, GROUPS),
+    % serialize_lecs_per_group(SLOTS, GROUPS),
     % print("LEC SERIALIZED PER EACH GROUP"), nl,
     
     % (TIMING, TEACHER)
     % A staff member can not be assigned to multiple meetings at the same time.
     no_slots_assigned_same_teacher(SLOTS),
-    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
+    print("NO OVERLAPING-TEACHER ENSURED"), nl,
 
     % (TIMING, LOCATION)
     % Ensure allocation of resources
     ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
-    % print("LOCATIONS DOMAIN ENSURED"), nl,
+    print("LOCATIONS DOMAIN ENSURED"), nl,
 
     % (TIMING, LOCATION)
     % A room can not be assigned to multiple meetings at the same time.
     no_slots_at_same_location(SLOTS),
-    % print("NO OVERLAPING-LOCATION ENSURED"), nl,
-
-
+    print("NO OVERLAPING-LOCATION ENSURED"), nl,
 
     once(labeling([min(LOCATION_TOTAL_COST)], VARIABLES)).
 
@@ -80,6 +81,14 @@ extract_variables([SLOT|SLOTS], VAR_SLOTS):-
 extract_variables([SLOT|SLOTS], [NUM, LOCATION|VAR_SLOTS]):-
     SLOT = (NUM, _, _, _, _, LOCATION, _),
     var(NUM), var(LOCATION),
+    extract_variables(SLOTS, VAR_SLOTS).
+extract_variables([SLOT|SLOTS], [NUM|VAR_SLOTS]):-
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
+    var(NUM), nonvar(LOCATION),
+    extract_variables(SLOTS, VAR_SLOTS).
+extract_variables([SLOT|SLOTS], [LOCATION|VAR_SLOTS]):-
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
+    nonvar(NUM), var(LOCATION),
     extract_variables(SLOTS, VAR_SLOTS).
 
 /**
@@ -183,21 +192,23 @@ ensure_allocation([SLOT|SLOTS], TOTAL_COST):-
 /**
  * Return list of ones of equal length
  */
-corresponding_list_of_ones([], []).
-corresponding_list_of_ones([_|Xs], [1|ONES]):-
-    corresponding_list_of_ones(Xs, ONES).
+% corresponding_list_of_ones([], []).
+% corresponding_list_of_ones([_|Xs], [1|ONES]):-
+%     corresponding_list_of_ones(Xs, ONES).
+corresponding_list_of_ones(Xs, ONES):-
+    length(Xs, N), length(ONES, N), ONES ins 1..1.
 
 /**
  * Serialize lectures for each group
  */
 serialize_lecs_per_group(_,[]).
 serialize_lecs_per_group(SLOTS, [GROUP|GROUPS]):-
-    serialize_lecs_per_group(SLOTS, GROUPS),
     % Once as there are two many possiblities of the same permutation of the timing_list
     % because of - TYPE does not equal or group does not equal - line
     once(list_lec_group_timings(SLOTS, GROUP, TIMINGS_LIST)),
     corresponding_list_of_ones(TIMINGS_LIST, ONES),
-    serialized(TIMINGS_LIST, ONES).
+    serialized(TIMINGS_LIST, ONES),
+    serialize_lecs_per_group(SLOTS, GROUPS).
 
 list_lec_group_timings([],_,[]).
 list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, TIMINGS_LIST):-
@@ -214,10 +225,10 @@ list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
  */
 serialize_subgroups(_,[]).
 serialize_subgroups(SLOTS, [SUBGROUP|SUBGROUPS]):-
-    serialize_subgroups(SLOTS, SUBGROUPS),
     list_subgroup_timings(SLOTS, SUBGROUP, TIMINGS_LIST),
     corresponding_list_of_ones(TIMINGS_LIST, ONES),
-    serialized(TIMINGS_LIST, ONES).
+    serialized(TIMINGS_LIST, ONES),
+    serialize_subgroups(SLOTS, SUBGROUPS).
 
 list_subgroup_timings([],_,[]).
 list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, TIMINGS_LIST):-
@@ -228,6 +239,118 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, TIMINGS_LIST):-
 list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
     SLOT = (TIME, _, _, _, TARGET_SUBGROUP, _, _),
     list_subgroup_timings(SLOTS, TARGET_SUBGROUP, TIMINGS_LIST).
+
+
+/**
+ * Serialize lecs
+ */
+serialize_each_lec_with_its_companions(SLOTS):-
+    split_lec_nonlec(SLOTS, LEC_SLOTS, NONLEC_SLOTS),
+    % print("Nonlecs Are: "), print(NONLEC_SLOTS), nl,
+    % extract_non_lec_slots(SLOTS, SUBJECTS, LIST_NONLEC_SLOTS),
+    serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS).
+    % serialize_with_companion(LEC_SLOTS, LIST_NONLEC_SLOTS).
+
+% serialize_with_companion(_, []).
+% serialize_with_companion(LEC_SLOTS, [NONLEC_SLOTS|LIST_NONLEC_SLOTS]):-
+%     serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS),
+%     serialize_with_companion(LEC_SLOTS, LIST_NONLEC_SLOTS).
+
+serialize_for_subject([], _).
+serialize_for_subject([LEC|LEC_SLOTS], NONLEC_SLOTS):-
+    % print("Serializing LEC: "), print(LEC), nl,
+    % print("Nonlecs Are: "), print(NONLEC_SLOTS), nl,
+    % once(serialize_for_subject_helper(LEC, NONLEC_SLOTS)),
+    once(pair_subject_and_companion(LEC, NONLEC_SLOTS, PAIRS)),
+    % print("PAIRS: "), print(PAIRS), nl,
+    serialize_pairs(PAIRS),
+    % print("Serialized FOR THAT LECTURE"), nl,
+    serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS).
+
+pair_subject_and_companion(_,[],[]).
+pair_subject_and_companion(LEC, [NONLEC|NONLEC_SLOTS], PAIRS):-
+    LEC = (_, SUBJECT1, _, GROUP1, _, _, _),
+    NONLEC = (_, SUBJECT2, _, GROUP2, _, _, _),
+    (SUBJECT1 \= SUBJECT2; GROUP1 \= GROUP2),
+    pair_subject_and_companion(LEC, NONLEC_SLOTS, PAIRS).
+pair_subject_and_companion(LEC, [NONLEC|NONLEC_SLOTS], [(NUM1, NUM2)|PAIRS]):-
+    LEC = (NUM1, SUBJECT, _, GROUP, _, _, _),
+    NONLEC = (NUM2, SUBJECT, _, GROUP, _, _, _),
+    pair_subject_and_companion(LEC, NONLEC_SLOTS, PAIRS).
+
+serialize_pairs([]).
+serialize_pairs([(A, B)|PAIRS]):-
+    A #\= B,
+    serialize_pairs(PAIRS).
+
+% serialize_for_subject_helper(_, []).
+% serialize_for_subject_helper(LEC, [NONLEC|NONLEC_SLOTS]):-
+%     % If not same group, but same subject, go further, but ignore this
+%     % print("Are THEY NOT EQUAL?"), nl,
+%     % print("NONLEC: "), print(NONLEC), nl,
+%     LEC = (_, SUBJECT1, _, GROUP1, _, _, _),
+%     NONLEC = (_, SUBJECT2, _, GROUP2, _, _, _),
+%     (SUBJECT1 \= SUBJECT2; GROUP1 \= GROUP2),
+%     serialize_for_subject_helper(LEC, NONLEC_SLOTS).
+% serialize_for_subject_helper(LEC, [NONLEC|NONLEC_SLOTS]):-
+%     LEC = (NUM1, SUBJECT, _, GROUP, _, _, _),
+%     NONLEC = (NUM2, SUBJECT, _, GROUP, _, _, _),
+%     print("About To Serialize: "), nl,
+%     print("LEC: "), print(LEC), nl,
+%     print("NONLEC: "), print(NONLEC), nl,
+%     NUM1 #\= NUM2,
+%     % serialized([NUM1, NUM2], [1, 1]),
+%     print("ALL_DISTINCT (LEC, NONLEC) ASSURED"), nl,
+%     serialize_for_subject_helper(LEC, NONLEC_SLOTS).
+
+
+    % print("INDEED"), nl.
+% serialize_for_subject_helper(LEC, [NONLEC|_]):-
+%     % No need to go further in this list; all of it from the same subject
+%     LEC = (_, SUBJECT1, _, _, _, _, _),
+%     NONLEC = (_, SUBJECT2, _, _, _, _, _),
+%     SUBJECT2 \= SUBJECT1.
+
+% extract_non_lec_slots(_, [], []).
+% extract_non_lec_slots(SLOTS, [SUBJECT|SUBJECTS], [ONE_LIST|LIST_NONLEC_SLOTS]):-
+%     extract_non_lec_slots_per_subject(SLOTS, SUBJECT, ONE_LIST),
+%     extract_non_lec_slots(SLOTS, SUBJECTS, LIST_NONLEC_SLOTS).
+
+% extract_non_lec_slots_per_subject([], _, []).
+% extract_non_lec_slots_per_subject([SLOT|SLOTS], TARGET_SUBJECT, NONLEC_SLOTS):-
+%     SLOT = (_, SUBJECT, TYPE, _, _, _, _),
+%     (SUBJECT \= TARGET_SUBJECT; TYPE = small_lec; TYPE = big_lec),
+%     extract_non_lec_slots_per_subject(SLOTS, TARGET_SUBJECT, NONLEC_SLOTS).
+
+% extract_non_lec_slots_per_subject([SLOT|SLOTS], TARGET_SUBJECT, [SLOT|NONLEC_SLOTS]):-
+%     SLOT = (_, TARGET_SUBJECT, TYPE, _, _, _, _),
+%     (TYPE \= small_lec, TYPE \= big_lec),
+%     extract_non_lec_slots_per_subject(SLOTS, TARGET_SUBJECT, NONLEC_SLOTS).
+
+% list_lecs([],[]).
+% list_lecs([SLOT|SLOTS], [SLOT|LEC_SLOTS]):-
+%     SLOT = (_, _, TYPE, _, _, _,_),
+%     (TYPE = small_lec; TYPE = big_lec),
+%     list_lecs(SLOTS, LEC_SLOTS).
+% list_lecs([SLOT|SLOTS], LEC_SLOTS):-
+%     SLOT = (_, _, TYPE, _, _, _,_),
+%     (TYPE \= small_lec, TYPE \= big_lec),
+%     list_lecs(SLOTS, LEC_SLOTS).
+% list_lecs([SLOT|SLOTS], [SLOT|LEC_SLOTS]):-
+%     SLOT = (_, _, TYPE, _, _, _,_),
+%     (TYPE = small_lec; TYPE = big_lec),
+%     list_lecs(SLOTS, LEC_SLOTS).
+
+split_lec_nonlec([], [], []).
+split_lec_nonlec([SLOT|SLOTS], LECS, [SLOT|NONLECS]):-
+    SLOT = (_, _, TYPE, _, _, _,_),
+    (TYPE \= small_lec, TYPE \= big_lec),
+    split_lec_nonlec(SLOTS, LECS, NONLECS).
+split_lec_nonlec([SLOT|SLOTS], [SLOT|LECS], NONLECS):-
+    SLOT = (_, _, TYPE, _, _, _,_),
+    (TYPE = small_lec; TYPE = big_lec),
+    split_lec_nonlec(SLOTS, LECS, NONLECS).
+
 
 
 
@@ -246,12 +369,3 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
 % 6. Perferences -- (UI requirement)*
 % A faculty member should be able to use the interface to insert the slots in which prefer/ do not prefer to
 % have the compensations in. The system should try to satisfy the preferences as much as possible.
-
-% 
-% The rooms/halls/labs are counted for each semester alone then summed up at the end of each sheet.
-% For your project, the maximum locations available per slot should be as follows:
-% Rooms : 50
-% Large halls (capacity 230) : 5
-% Small halls (capacity 100) :1
-% Computer labs : 8
-% 
