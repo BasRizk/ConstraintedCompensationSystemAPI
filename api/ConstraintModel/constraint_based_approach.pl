@@ -22,7 +22,7 @@
 %                          \/
 % 
 
-schedule(SLOTS, HOLIDAY, _, _, SUBGROUPS):-
+schedule(SLOTS, HOLIDAYS, _, _, SUBGROUPS):-
     print("Began"), nl,
 
     % => Extract variables for labeling later
@@ -32,7 +32,7 @@ schedule(SLOTS, HOLIDAY, _, _, SUBGROUPS):-
     % => Ensuring Domains
     % (TIMING, HOLIDAY)
     % Ensure proper domains on slots timings
-    ensure_slots(SLOTS, HOLIDAY),
+    ensure_slots(SLOTS, HOLIDAYS),
     print("TIMINGS DOMAIN ENSURED"), nl,
     % (TIMING, LOCATION)
     % Ensure allocation of resources
@@ -86,8 +86,13 @@ extract_variables([SLOT|SLOTS], [LOCATION|VAR_SLOTS]):-
 /**
  * Ensure slots structure, and NUM of slot validity
  */
-ensure_slots([], _).
-ensure_slots([SLOT|SLOTS], HOLIDAY):-
+ensure_slots(_, []).
+ensure_slots(SLOTS, [HOLIDAY|HOLIDAYS]):-
+    ensure_slots_on_holiday(SLOTS, HOLIDAY),
+    ensure_slots(SLOTS, HOLIDAYS).
+
+ensure_slots_on_holiday([], _).
+ensure_slots_on_holiday([SLOT|SLOTS], HOLIDAY):-
     SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _, _),
     (
         (HOLIDAY = 0, NUM in 5..29);
@@ -101,7 +106,7 @@ ensure_slots([SLOT|SLOTS], HOLIDAY):-
     nonvar(TYPE),
     nonvar(GROUP),
     nonvar(SUBGROUP),
-    ensure_slots(SLOTS, HOLIDAY).
+    ensure_slots_on_holiday(SLOTS, HOLIDAY).
 
 /**
  * No two slots at the same time placed the same location

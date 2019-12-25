@@ -162,18 +162,31 @@ class QueryFormater:
 
         return list(all_subjects), list(all_groups), list(all_subgroups)
 
-    def create_query(self, slots, compensation_slots=None, holiday=0):
+    @staticmethod
+    def generate_offslots_nums(holidays):
+        """
+        Generate list containing all offslot nums according to the modelling
+        """
+        holidays.sort()
+        nums = []
+        for holiday in holidays:
+            # Note: a day contains 5 slots
+            first_slot_in_holiday = holiday * 5
+            last_slot_in_holiday = (holiday * 5) + 4
+            nums += [i for i in range(first_slot_in_holiday,
+                                      last_slot_in_holiday + 1)]
+        return nums
+            
+    def create_query(self, slots, compensation_slots=None, holidays=[]):
         """
         Create a prolog constraint model query
         """
-        # Note: a day contains 5 slots
-        first_slot_in_holiday = holiday * 5
-        last_slot_in_holiday = (holiday * 5) + 4
+        
+        off_nums = self.generate_offslots_nums(holidays)
         slots_string = "["
         for slot in slots:
             slot_num = slot[0]
-            if (slot_num >= first_slot_in_holiday) and (slot_num <=
-                                                        last_slot_in_holiday):
+            if slot_num in off_nums:
                 continue
             slots_string += self.convert_to_query_format(slot)
             slots_string += ","
@@ -196,7 +209,7 @@ class QueryFormater:
         groups = self.convert_to_query_format(groups)
         subgroups = self.convert_to_query_format(subgroups)
         return "schedule(%s,%s,%s,%s,%s)." %\
-             (slots_string, str(holiday), subjects, groups, subgroups)
+             (slots_string, str(holidays), subjects, groups, subgroups)
 
     def turn_to_variable_slot(self, slot, index = 0):
         """
@@ -208,15 +221,14 @@ class QueryFormater:
         return ("NUM" + str(index), subject, slot_type,
                 group, subgroup, "LOCATION" + str(index), teacher)
     
-    def get_holiday_to_compensate(self, slots, holiday=0,
+    def get_holiday_to_compensate(self, slots, holidays=[0],
                                   specific_group=None, limit=0,
                                   verbose=False):
         """
         Returns one whole day all-slots to be compensated; useful for debugging
         """
-        first_slot_in_holiday = holiday * 5
-        last_slot_in_holiday = (holiday * 5) + 4
-        
+
+        off_nums = self.generate_offslots_nums(holidays)
         compensations_subjects = set()
         compensations_subgroups = set()
         num_of_compensations = 0
@@ -227,8 +239,7 @@ class QueryFormater:
                     if specific_group != group:
                         continue
                     
-            if (slot_num >= first_slot_in_holiday) and \
-                                  (slot_num <= last_slot_in_holiday):
+            if slot_num in off_nums:
                     
                 digitized_slot = self.digitize_one_slot(slot)
             
@@ -259,36 +270,36 @@ class QueryFormater:
                 
         
     
-    def get_random_slot_to_compensate(self, slots,
-                                      # holiday=0,
-                                      randomized=False, slot_index=0):
-        """
-        Returns random or not slot to be compensated; useful for debugging
-        """
-        all_compensation_slots = slots
+    # def get_random_slot_to_compensate(self, slots,
+    #                                   # holiday=0,
+    #                                   randomized=False, slot_index=0):
+    #     """
+    #     Returns random or not slot to be compensated; useful for debugging
+    #     """
+    #     all_compensation_slots = slots
         
-        if randomized:
-            from random import random as rand
-            slot_index = int(rand() * len(all_compensation_slots))
+    #     if randomized:
+    #         from random import random as rand
+    #         slot_index = int(rand() * len(all_compensation_slots))
 
-        slot = all_compensation_slots[slot_index]
+    #     slot = all_compensation_slots[slot_index]
         
-        holiday = 0
-        for day_i in range(4, 30, 5):
-            if slot[0] <= day_i:
-                break
-            holiday += 1
+    #     holiday = 0
+    #     for day_i in range(4, 30, 5):
+    #         if slot[0] <= day_i:
+    #             break
+    #         holiday += 1
             
-        print("Compensation slot = " + str(slot))
+    #     print("Compensation slot = " + str(slot))
         
-        digitized_slot =\
-                    self.digitize_one_slot(slot)
-        slot_string =\
-            self.convert_to_query_format(self.turn_to_variable_slot(digitized_slot))
+    #     digitized_slot =\
+    #                 self.digitize_one_slot(slot)
+    #     slot_string =\
+    #         self.convert_to_query_format(self.turn_to_variable_slot(digitized_slot))
 
-        _, subject, _, _, subgroup, _, _ = digitized_slot
+    #     _, subject, _, _, subgroup, _, _ = digitized_slot
 
-        return ([slot_string], [subject], [subgroup]), holiday
+    #     return ([slot_string], [subject], [subgroup]), holiday
 
     def decode_subject(self, encoding):
         """
