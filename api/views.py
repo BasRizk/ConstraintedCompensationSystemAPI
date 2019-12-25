@@ -45,6 +45,12 @@ class AllGroups(APIView):
         return Response({"groups": groups}, status=status.HTTP_200_OK)
 
 
+
+def get_slotWeek(slot_id):
+        try:
+            return Slot.objects.values_list('slot_week').get(pk=slot_id)[0]
+        except Slot.DoesNotExist:
+            raise Http404
 def get_object(slot_id):
         try:
             return tuple(Slot.objects
@@ -57,8 +63,8 @@ def get_object(slot_id):
         except Slot.DoesNotExist:
             raise Http404
 
-def get_all_objects():
-    return tuple(Slot.objects.all()
+def get_all_objects(week):
+    return tuple(Slot.objects.filter(slot_week=week)
                     .order_by('slot_num')
                     .values_list('slot_num',
                                 'slot_subject',
@@ -90,7 +96,7 @@ class CompensateSlot(APIView):
 
                 if to_compensate_slots:
                     schedule_solver = ConstraintModelEngine.get_instance()
-                    all_slots = get_all_objects()
+                    all_slots = get_all_objects(get_slotWeek(slot_id))
                     schedule_solver.connect_schedule(all_slots)
                     extra_holidays = request.data.get('extra_holidays')
                     # if not extra_holidays:
