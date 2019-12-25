@@ -108,7 +108,7 @@ class ConfirmCompensation(APIView):
     """
     Confirm compensation possibilities and save into DB
     """
-    def save_compensations(ids, compensations_possibility, week):
+    def save_compensations(self, ids, compensations_possibility, week):
         not_updated = set()
         for _id in ids:
             num_key = "NUM" + str(_id)
