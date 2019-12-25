@@ -142,7 +142,6 @@ class ConstraintModelEngine:
         """
         Generate list of the default weekon days of each group
         """
-        print(list(all_groups))
         if not all_groups:
             if not self.all_slots:
                 print("WARNING:: connect_schedule first.")

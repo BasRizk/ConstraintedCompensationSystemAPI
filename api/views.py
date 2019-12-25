@@ -87,12 +87,11 @@ class CompensateSlot(APIView):
     """
 
     @staticmethod
-    def get_to_compensate_slots_tuples(ids):
+    def get_to_compensate_slots_tuples(ids_to_compensate):
         to_compensate_slots = []
         for slot_id in ids_to_compensate:
-            slot = get_object(slot_id=slot_id)
-            if(slot):
-                # slot_tuple = get_object(slot_id=slot_id)
+            slot_tuple = get_object(slot_id=slot_id)
+            if(slot_tuple):
                 slot_tuple = (slot_id,) + slot_tuple
                 to_compensate_slots.append(slot_tuple)
         return to_compensate_slots
@@ -105,7 +104,7 @@ class CompensateSlot(APIView):
                 limit = 2
             to_compensate_slots =\
                      self.get_to_compensate_slots_tuples([id_to_compensate])
-            if to_compensate_slots:
+            if to_compensate_slots and len(to_compensate_slots) > 0:
                 schedule_solver = ConstraintModelEngine.get_instance()
                 all_slots = get_all_objects(get_slotWeek(id_to_compensate))
                 schedule_solver.connect_schedule(all_slots)
