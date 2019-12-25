@@ -171,7 +171,8 @@ class ConfirmCompensation(APIView):
     """
     def post(self, request):
         if request.method == 'POST':
-            ids = request.data.get('ids')
+            print(request.data)
+            ids = request.data.get('id')
             compensations_possibility = request.data.get('compensations_possibility')
             not_updated_ids, updated_ids = self.save_compensations(ids, compensations_possibility)
             back_response = {
@@ -193,13 +194,13 @@ class ConfirmCompensation(APIView):
 
             
             if new_num and new_location:
-                Slot.objects.get(pk=_id).Update(slot_location=new_location, slot_num=new_num)
+                Slot.objects.filter(pk=_id).update(slot_location=new_location, slot_num=new_num)
                 updated.append(_id)
             elif new_num:
-                Slot.objects.get(pk=_id).Update(slot_num=new_num)
+                Slot.objects.filter(pk=_id).update(slot_num=new_num)
                 updated.append(_id)
             elif new_location:
-                Slot.objects.get(pk=_id).Update(slot_location=new_location)
+                Slot.objects.filter(pk=_id).update(slot_location=new_location)
                 updated.append(_id)
             else:
                 # Maybe return not updated to notify users, regarding the warning!
