@@ -66,8 +66,10 @@ class ConstraintModelEngine:
             slots_digitized, variable_slots, holidays=holidays)
     
         answers = []
+        print("About to query")
+        print(variable_slots)
         for option in self.prolog.query(query_statement):
-
+            print(option)
             one_answer = {}
             for _id in compensation_ids:
                 num_var = "NUM" + str(_id)

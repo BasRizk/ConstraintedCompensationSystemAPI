@@ -87,40 +87,54 @@ class CompensateSlot(APIView):
     """
 
     @staticmethod
-    def get_to_compensate_slots_tuples(ids_to_compensate):
+    def get_to_compensate_slots_tuples(ids_to_compensate,
+                                       prefered_slot_num=None):
         to_compensate_slots = []
         for slot_id in ids_to_compensate:
             slot_tuple = get_object(slot_id=slot_id)
             if(slot_tuple):
+
                 slot_tuple = (slot_id,) + slot_tuple
+                if prefered_slot_num is not None:
+                    _id, _, subject, _type, group,\
+                    subgroup, location, teacher =\
+                         slot_tuple
+                    slot_tuple = (_id, prefered_slot_num, subject,
+                                 _type, group, subgroup,
+                                 location, teacher)
                 to_compensate_slots.append(slot_tuple)
         return to_compensate_slots
 
     def serve_preference_request(self, request):
         id_to_compensate = request.data.get("id")
-        if id_to_compensate:
+        back_response = {"msg": ""}
+        if id_to_compensate is not None:
             limit = request.data.get('limit')
-            if not limit:
+            if limit is not None:
                 limit = 2
-            to_compensate_slots =\
-                     self.get_to_compensate_slots_tuples([id_to_compensate])
-            if to_compensate_slots and len(to_compensate_slots) > 0:
-                schedule_solver = ConstraintModelEngine.get_instance()
-                all_slots = get_all_objects(get_slotWeek(id_to_compensate))
-                schedule_solver.connect_schedule(all_slots)
+            prefered_slot_num = request.data.get("prefered_slot_num")
+            if prefered_slot_num is not None:
+                to_compensate_slots =\
+                        self.get_to_compensate_slots_tuples([id_to_compensate],
+                                                prefered_slot_num=prefered_slot_num)
+                if to_compensate_slots and len(to_compensate_slots) > 0:
+                    schedule_solver = ConstraintModelEngine.get_instance()
+                    all_slots = get_all_objects(get_slotWeek(id_to_compensate))
+                    schedule_solver.connect_schedule(all_slots)
 
-                possiblities =\
-                    schedule_solver.query_model(to_compensate_slots,
-                                                answers_limit=limit,
-                                                extra_holidays=extra_holidays,
-                                                time_preference=True)
-                return Response(possiblities, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+                    possiblities =\
+                        schedule_solver.query_model(to_compensate_slots,
+                                                    answers_limit=limit,
+                                                    time_preference=True)
+                    return Response(possiblities, status=status.HTTP_200_OK)
+                back_response = {"msg": "id does not exist"}
+            back_response = {"msg": "No prefered_slot_num sent!"}
+        return Response(back_response, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
         if request.method == 'POST':
             if request.data.get('preference'):
-                self.serve_preference_request(request)
+                return self.serve_preference_request(request)
 
             ids_to_compensate = request.data.get('id')
             if ids_to_compensate:
