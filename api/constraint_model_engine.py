@@ -64,19 +64,35 @@ class ConstraintModelEngine:
 
         query_statement = self.query_formater.create_query(
             slots_digitized, variable_slots, holidays=holidays)
-    
+        
+        # with open("query_example.txt", "w") as f:
+        #     query_rest = query_statement
+        #     while(True):
+        #         limit = 1000
+        #         if len(query_rest) < limit:
+        #             break
+        #         f.write(query_rest[:limit])
+        #         f.write("\n")
+        #         query_rest = query_rest[limit:]
+        #     f.write(query_rest)
+
         answers = []
-        print("About to query")
-        print(variable_slots)
+        # print("About to query")
+        # print(variable_slots)
         for option in self.prolog.query(query_statement):
-            print(option)
+            # print(option)
             one_answer = {}
             for _id in compensation_ids:
                 num_var = "NUM" + str(_id)
                 location_var = "LOCATION" + str(_id)
-                one_answer[num_var] = str(option[num_var])
-                one_answer[location_var] = str(option[location_var])
-            answers.append(one_answer)
+                num_val = option.get(num_var)
+                location_val = option.get(location_var)
+                if num_val:
+                    one_answer[num_var] = str(num_val)
+                if location_val:
+                    one_answer[location_var] = str(location_val)
+            if len(one_answer) > 0:
+                answers.append(one_answer)
             
             answers_limit -= 1
             if answers_limit == 0:
@@ -104,7 +120,7 @@ class ConstraintModelEngine:
             
             _id, num, subject, _type, subgroup, group, location, teacher = compensation_slot
             compensation_slot = (num, subject, _type, subgroup, group, location, teacher)
-
+            print(compensation_slot)
             holiday = 0
             for day_i in range(4, 29, 5):
                 if compensation_slot[0] <= day_i:
@@ -126,7 +142,9 @@ class ConstraintModelEngine:
             ids.append(_id)
             subjects.add(subject)
             subgroups.add(subgroup)
-
+        
+        if location_preference or time_preference:
+            holidays = [-1]
         return (slot_strings, list(subjects), list(subgroups)), ids, list(holidays)
 
     def decode_slot(self, slot):

@@ -110,7 +110,7 @@ class CompensateSlot(APIView):
         back_response = {"msg": ""}
         if id_to_compensate is not None:
             limit = request.data.get('limit')
-            if limit is not None:
+            if limit is None:
                 limit = 2
             prefered_slot_num = request.data.get("prefered_slot_num")
             if prefered_slot_num is not None:

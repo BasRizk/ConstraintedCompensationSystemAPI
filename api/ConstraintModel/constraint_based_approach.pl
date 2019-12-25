@@ -100,7 +100,10 @@ ensure_slots_on_holiday([SLOT|SLOTS], HOLIDAY):-
         (HOLIDAY = 1, NUM in 0..4\/10..29);
         (HOLIDAY = 2, NUM in 0..9\/15..29);
         (HOLIDAY = 3, NUM in 0..14\/20..29);
-        (HOLIDAY = 4, NUM in 0..19\/25..29)
+        (HOLIDAY = 4, NUM in 0..19\/25..29);
+        (HOLIDAY \= 0, HOLIDAY \=1, HOLIDAY \=2,
+         HOLIDAY \= 3, HOLIDAY \=4, HOLIDAY \=5,
+         NUM in 0..29)
     ),
     nonvar(SUBJECT),
     nonvar(TYPE),
