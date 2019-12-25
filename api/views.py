@@ -45,12 +45,7 @@ class AllGroups(APIView):
         return Response({"groups": groups}, status=status.HTTP_200_OK)
 
 
-class CompensateSlot(APIView):
-    """
-    Retrieve, update or delete a slot instance.
-    """
-
-    def get_object(self, slot_id):
+def get_object(slot_id):
         try:
             return tuple(Slot.objects
                          .values_list('slot_num',
@@ -62,15 +57,19 @@ class CompensateSlot(APIView):
         except Slot.DoesNotExist:
             raise Http404
 
-    def get_all_objects(self):
-        return tuple(Slot.objects.all()
-                     .order_by('slot_num')
-                     .values_list('slot_num',
-                                  'slot_subject',
-                                  'slot_type', 'slot_group',
-                                  'slot_subgroup', 'slot_location',
-                                  'slot_teacher'))
+def get_all_objects():
+    return tuple(Slot.objects.all()
+                    .order_by('slot_num')
+                    .values_list('slot_num',
+                                'slot_subject',
+                                'slot_type', 'slot_group',
+                                'slot_subgroup', 'slot_location',
+                                'slot_teacher'))
 
+class CompensateSlot(APIView):
+    """
+    Ask for a compensation of one or more slots instances.
+    """
     def post(self, request):
         if request.method == 'POST':
             ids_to_compensate = request.data.get('id')
@@ -82,15 +81,15 @@ class CompensateSlot(APIView):
 
                 to_compensate_slots = []
                 for slot_id in ids_to_compensate:
-                    slot = self.get_object(slot_id=slot_id)
+                    slot = get_object(slot_id=slot_id)
                     if(slot):
-                        slot_tuple = self.get_object(slot_id=slot_id)
+                        slot_tuple = get_object(slot_id=slot_id)
                         slot_tuple = (slot_id,) + slot_tuple
                         to_compensate_slots.append(slot_tuple)
 
                 if to_compensate_slots:
                     schedule_solver = ConstraintModelEngine.get_instance()
-                    all_slots = self.get_all_objects()
+                    all_slots = get_all_objects()
                     schedule_solver.connect_schedule(all_slots)
                     possiblities =\
                         schedule_solver.query_model(to_compensate_slots,
@@ -103,3 +102,29 @@ class CompensateSlot(APIView):
     #     slot = self.get_object(pk)
     #     slot.delete()
     #     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ConfirmCompensation(APIView):
+    """
+    Confirm compensation possibilities and save into DB
+    """
+    def save_compensations(ids, compensations_possibility, week):
+        not_updated = set()
+        for _id in ids:
+            num_key = "NUM" + str(_id)
+            location_key = "LOCATION" + str(_id)
+            new_num = compensations_possibility.get(num_key)
+            new_location = compensations_possibility.get(location_key)
+
+            if new_num and new_location:
+                # TODO update using both values, _id, and the week
+                pass
+            elif new_num:
+                # TODO update one only
+                pass
+            elif new_location:
+                # TODO update one only (dumb but it is fine)
+                pass
+            else:
+                not_updated.add(_id)
+        # Maybe return not updated to notify users, regarding the warning!
