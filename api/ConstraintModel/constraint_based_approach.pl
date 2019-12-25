@@ -22,25 +22,28 @@
 %                          \/
 % 
 
-schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
-    % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
+schedule(SLOTS, HOLIDAY, _, _, SUBGROUPS):-
     print("Began"), nl,
 
-    % Extract variables for labeling later
+    % => Extract variables for labeling later
     extract_variables(SLOTS, VARIABLES),
     print("VARIABLES = "), print(VARIABLES), nl,
 
-    % (TIMING, SUBJECT(lec), SUBJECT_i_(nonlec))
-    % No group assigned a lec and some tut. or lab at the same time of the same subject
-    % TODO assure A group can not be assigned to multiple meetings at the same time.
-    serialize_each_lec_with_its_companions(SLOTS),
-    print("EACH LECS SERAILIZED WITH EACH OF ITS COMPANIONS"), nl,
-
+    % => Ensuring Domains
     % (TIMING, HOLIDAY)
     % Ensure proper domains on slots timings
     ensure_slots(SLOTS, HOLIDAY),
     print("TIMINGS DOMAIN ENSURED"), nl,
+    % (TIMING, LOCATION)
+    % Ensure allocation of resources
+    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
+    print("LOCATIONS DOMAIN ENSURED"), nl,
 
+    % => A group can not be assigned to multiple meetings at the same time.
+    % (TIMING, SUBJECT(lec), SUBJECT_i_(nonlec))
+    % No group assigned a lec and some tut. or lab at the same time of the same subject
+    serialize_each_lec_with_its_companions(SLOTS),
+    print("EACH LECS SERAILIZED WITH EACH OF ITS COMPANIONS"), nl,
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
@@ -51,11 +54,6 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % A staff member can not be assigned to multiple meetings at the same time.
     no_slots_assigned_same_teacher(SLOTS),
     print("NO OVERLAPING-TEACHER ENSURED"), nl,
-
-    % (TIMING, LOCATION)
-    % Ensure allocation of resources
-    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
-    print("LOCATIONS DOMAIN ENSURED"), nl,
 
     % (TIMING, LOCATION)
     % A room can not be assigned to multiple meetings at the same time.
@@ -210,7 +208,10 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
 
 
 /**
- * Serialize lecs
+ * Serialize lecs of a subject taken by a group
+ * with each slot of the same subject taken by that group
+ * 
+ * Note: Does not care about other subjects taken by that group
  */
 serialize_each_lec_with_its_companions(SLOTS):-
     split_lec_nonlec(SLOTS, LEC_SLOTS, NONLEC_SLOTS),
