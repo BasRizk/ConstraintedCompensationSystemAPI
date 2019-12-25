@@ -128,7 +128,8 @@ class CompensateSlot(APIView):
                                                     time_preference=True)
                     return Response(possiblities, status=status.HTTP_200_OK)
                 back_response = {"msg": "id does not exist"}
-            back_response = {"msg": "No prefered_slot_num sent!"}
+            else:
+                back_response = {"msg": "No prefered_slot_num sent!"}
         return Response(back_response, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
@@ -159,10 +160,13 @@ class CompensateSlot(APIView):
                         schedule_solver.query_model(to_compensate_slots,
                                                     answers_limit=limit,
                                                     extra_holidays=extra_holidays)
+                    
                     return Response(possiblities, status=status.HTTP_200_OK)
                 back_response = {"msg": "ids in list of (id) does not exist"}
-            back_response = {"msg": "list of (id) needed"}
-        back_response = {"msg": "only support POST methods"}
+            else:
+                back_response = {"msg": "list of (id) needed"}
+        else:
+            back_response = {"msg": "only support POST methods"}
         return Response(back_response, status=status.HTTP_400_BAD_REQUEST)
 
 class ConfirmCompensation(APIView):
