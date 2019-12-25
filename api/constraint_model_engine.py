@@ -80,16 +80,16 @@ class ConstraintModelEngine:
         # print("About to query")
         # print(variable_slots)
         for option in self.prolog.query(query_statement):
-            # print(option)
+            print(option)
             one_answer = {}
             for _id in compensation_ids:
                 num_var = "NUM" + str(_id)
                 location_var = "LOCATION" + str(_id)
                 num_val = option.get(num_var)
                 location_val = option.get(location_var)
-                if num_val:
+                if num_val is not None:
                     one_answer[num_var] = str(num_val)
-                if location_val:
+                if location_val is not None:
                     one_answer[location_var] = str(location_val)
             if len(one_answer) > 0:
                 answers.append(one_answer)

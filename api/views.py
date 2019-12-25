@@ -132,12 +132,13 @@ class CompensateSlot(APIView):
         return Response(back_response, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
+        back_response = {"msg": ""}
         if request.method == 'POST':
             if request.data.get('preference'):
                 return self.serve_preference_request(request)
 
             ids_to_compensate = request.data.get('id')
-            if ids_to_compensate:
+            if ids_to_compensate is not None:
 
                 limit = request.data.get('limit')
                 if not limit:
@@ -146,7 +147,7 @@ class CompensateSlot(APIView):
                 to_compensate_slots =\
                      self.get_to_compensate_slots_tuples(ids_to_compensate)
 
-                if to_compensate_slots:
+                if to_compensate_slots and len(to_compensate_slots) > 0:
                     one_of_the_ids = ids_to_compensate[0]
                     schedule_solver = ConstraintModelEngine.get_instance()
                     all_slots = get_all_objects(get_slotWeek(one_of_the_ids))
@@ -159,8 +160,10 @@ class CompensateSlot(APIView):
                                                     answers_limit=limit,
                                                     extra_holidays=extra_holidays)
                     return Response(possiblities, status=status.HTTP_200_OK)
-
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+                back_response = {"msg": "ids in list of (id) does not exist"}
+            back_response = {"msg": "list of (id) needed"}
+        back_response = {"msg": "only support POST methods"}
+        return Response(back_response, status=status.HTTP_400_BAD_REQUEST)
 
 class ConfirmCompensation(APIView):
     """
