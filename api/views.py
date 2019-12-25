@@ -113,7 +113,15 @@ class ConfirmCompensation(APIView):
     """
     Confirm compensation possibilities and save into DB
     """
-    def save_compensations(self, ids, compensations_possibility, week):
+    def post(self, request):
+        if request.method == 'POST':
+            ids = request.data.get('ids')
+            compensations_possibility = request.data.get('compensations_possibility')
+            save_compensations(ids, compensations_possibility)
+            return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    def save_compensations(self, ids, compensations_possibility):
         not_updated = set()
         for _id in ids:
             num_key = "NUM" + str(_id)
@@ -121,14 +129,18 @@ class ConfirmCompensation(APIView):
             new_num = compensations_possibility.get(num_key)
             new_location = compensations_possibility.get(location_key)
 
+            
             if new_num and new_location:
                 # TODO update using both values, _id, and the week
+                Slot.objects.get(pk=_id).Update(slot_location=new_location, slot_num=new_num)
                 pass
             elif new_num:
                 # TODO update one only
+                Slot.objects.get(pk=_id).Update(slot_num=new_num)
                 pass
             elif new_location:
                 # TODO update one only (dumb but it is fine)
+                Slot.objects.get(pk=_id).Update(slot_location=new_location)
                 pass
             else:
                 not_updated.add(_id)

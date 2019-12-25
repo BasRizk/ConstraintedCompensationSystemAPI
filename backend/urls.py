@@ -27,6 +27,7 @@ urlpatterns = [
     path('all_slots/<str:group_name>/<int:week>', views.AllSlots.as_view()),
     path('all_groups', views.AllGroups.as_view()),
     path('compensate/', views.CompensateSlot.as_view()),
+    path('compensate/confirm', views.ConfirmCompensation.as_view()),
 ]
 #   + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
