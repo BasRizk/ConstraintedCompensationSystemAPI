@@ -170,8 +170,9 @@ class ConfirmCompensation(APIView):
     Confirm compensation possibilities and save into DB
     """
     def post(self, request):
+        back_response = {"msg": ""}
         if request.method == 'POST':
-            print(request.data)
+            # print(request.data)
             ids = request.data.get('id')
             compensations_possibility = request.data.get('compensations_possibility')
             not_updated_ids, updated_ids = self.save_compensations(ids, compensations_possibility)
@@ -180,7 +181,8 @@ class ConfirmCompensation(APIView):
                 "updated_ids": updated_ids
             }
             return Response(back_response, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        back_response = {"msg": "only support POST methods"}
+        return Response(back_response, status=status.HTTP_400_BAD_REQUEST)
 
     def save_compensations(self, ids, compensations_possibility):
         not_updated = set()
@@ -192,7 +194,6 @@ class ConfirmCompensation(APIView):
             new_num = compensations_possibility.get(num_key)
             new_location = compensations_possibility.get(location_key)
 
-            
             if new_num and new_location:
                 Slot.objects.filter(pk=_id).update(slot_location=new_location, slot_num=new_num)
                 updated.append(_id)
