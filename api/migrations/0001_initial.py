@@ -16,17 +16,21 @@ class Migration(migrations.Migration):
             name='Slot',
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('slot_num', models.IntegerField(validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(29)])),
+                ('slot_num', models.IntegerField(validators=\
+                    [django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(29)])),
                 ('slot_subject', models.CharField(max_length=60)),
                 ('slot_type', models.CharField(max_length=32)),
                 ('slot_group', models.CharField(max_length=60)),
                 ('slot_subgroup', models.CharField(max_length=60)),
-                ('slot_location', models.IntegerField(validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(63)])),
+                ('slot_location', models.IntegerField(validators=\
+                    [django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(63)])),
                 ('slot_teacher', models.CharField(max_length=60)),
+                ('slot_week', models.IntegerField(validators=\
+                    [django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(14)])),
             ],
             options={
                 'verbose_name_plural': 'slots',
-                'ordering': ['slot_num'],
+                'ordering': ['slot_week', 'slot_num', 'slot_group', 'slot_subgroup'],
             },
         ),
     ]

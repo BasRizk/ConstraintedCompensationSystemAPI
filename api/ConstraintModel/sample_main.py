@@ -19,6 +19,7 @@ parser = ScheduleParserWithTeachers(filename="MET_Winter19_schedule_31131.xlsx",
                                                                 'physics',
                                                                 'embedded systems',
                                                                 'video & audio'])
+
 # hadwa pasha is teaching video-and-audio-lab, and csen-lab at the same time
 days_schedules, sheet_names, headers = parser.parse_schedule()
 teachers_schedules = parser.parse_teachers_schedules()
@@ -59,34 +60,53 @@ for soln in prolog.query(query_statement):
 print("END PROLOG")
 
 
-
-def to_json_fixture(all_slots, model_name = "api.slot"):
+def sample_weekson_dict(parser, all_slots):
+    all_groups = parser.get_all_groups(all_slots)
+    weekson_dict = {}
+    for group in list(all_groups):
+        if "1engineering" in group:
+            weekson_dict[group] = [i for i in range(3, 15)]
+        else:
+            weekson_dict[group] = [i for i in range(0, 13)]
+    return weekson_dict
+    
+def to_json_fixture(parser, all_slots, model_name = "api.slot"):
     import json
+    
+    weekson_dict = sample_weekson_dict(parser, all_slots)
+    
     slot_counter = 0
     all_slots_records = []
     for slot in all_slots:
         slot_counter += 1
         slot_num, slot_subject, slot_type,\
         slot_group, slot_subgroup, slot_location, slot_teacher = slot
-         
-        slot_record = {}
-        slot_record["slot_num"] = slot_num
-        slot_record["slot_subject"] = slot_subject
-        slot_record["slot_type"] = slot_type
-        slot_record["slot_group"] = slot_group
-        slot_record["slot_subgroup"] = slot_subgroup
-        slot_record["slot_location"] = slot_location
-        slot_record["slot_teacher"] = slot_teacher
-#        slot_record = json.dumps(slot_record)
-        print(slot_record)
         
-        db_record = {}
-        db_record["model"] = model_name
-        db_record["pk"] = slot_counter
-        db_record["fields"] = slot_record
-#        db_record = json.dumps(db_record)
-        all_slots_records.append(db_record)
-        print(db_record)
+        weekson = weekson_dict[slot_group]
+        if not weekson:
+            print("WARNING:: HALTING..")
+            return
+        
+        for slot_week in weekson:
+            slot_record = {}
+            slot_record["slot_num"] = slot_num
+            slot_record["slot_subject"] = slot_subject
+            slot_record["slot_type"] = slot_type
+            slot_record["slot_group"] = slot_group
+            slot_record["slot_subgroup"] = slot_subgroup
+            slot_record["slot_location"] = slot_location
+            slot_record["slot_teacher"] = slot_teacher
+            slot_record["slot_week"] = slot_week
+    #        slot_record = json.dumps(slot_record)
+            # print(slot_record)
+            
+            db_record = {}
+            db_record["model"] = model_name
+            db_record["pk"] = slot_counter
+            db_record["fields"] = slot_record
+    #        db_record = json.dumps(db_record)
+            all_slots_records.append(db_record)
+            # print(db_record)
         
     all_slots_records = json.dumps(all_slots_records)
     with open("schedule_slots_fixture.json", "w") as f:

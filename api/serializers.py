@@ -10,7 +10,7 @@ class SlotSerializer(serializers.HyperlinkedModelSerializer):
         model = Slot
         fields = ['id', 'slot_num', 'slot_subject', 'slot_type',
                   'slot_group', 'slot_subgroup', 'slot_location',
-                  'slot_teacher']
+                  'slot_teacher', 'slot_week']
 
     id = serializers.IntegerField(read_only=True)
     slot_num = serializers.IntegerField(required=True)
@@ -20,6 +20,7 @@ class SlotSerializer(serializers.HyperlinkedModelSerializer):
     slot_subgroup = serializers.CharField(required=True, allow_blank=False)
     slot_location = serializers.IntegerField(required=True)
     slot_teacher = serializers.CharField(required=True, allow_blank=False)
+    slot_week = serializers.IntegerField(required=True)
 
     def create(self, validated_data):
         """
@@ -38,6 +39,7 @@ class SlotSerializer(serializers.HyperlinkedModelSerializer):
         instance.slot_subgroup = validated_data.get('slot_subgroup', instance.slot_subgroup)
         instance.slot_location = validated_data.get('slot_location', instance.slot_location)
         instance.slot_teacher = validated_data.get('slot_teacher', instance.slot_teacher)
+        instance.slot_week = validated_data.get('slot_week', instance.slot_week)
         instance.save()
         return instance
 

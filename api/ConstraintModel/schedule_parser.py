@@ -328,7 +328,7 @@ class ScheduleParser:
         all_groups = set()
         all_slots_collapsed = {}
         for slot in all_slots:
-            (slot_num, _, _, group, _, _) = slot
+            (slot_num, _, _, group, _, _, _) = slot
             one_slot_collapse = all_slots_collapsed.get(slot_num)
             if not one_slot_collapse:
                 all_slots_collapsed[slot_num] = []
@@ -398,4 +398,15 @@ class ScheduleParser:
                 worksheet.set_column(idx, idx, 40, wrap_format)  # set column width
 
         writer.save()
+        
+    def get_all_groups(self, all_slots):
+        """
+        Listify groups
+        """
+        all_groups = set()
+        for slot in all_slots:
+            (slot_num, _, _, group, _, _, _) = slot
+            all_groups.add(group)
+        all_groups = sorted(all_groups)
+        return all_groups
     
