@@ -41,7 +41,9 @@ class ConstraintModelEngine:
         self.all_slots = all_slots
         self.sample_weekson_dict()
 
-    def query_model(self, compensation_slots, answers_limit=0, extra_holidays=None):
+    def query_model(self, compensation_slots, answers_limit=0,
+                    extra_holidays=None,
+                    time_preference=False, location_preference=False):
         """
         Creates a query to the constraint model
         """
@@ -53,7 +55,9 @@ class ConstraintModelEngine:
         slots_digitized = self.query_formater.digitize(self.all_slots)
 
         variable_slots, compensation_ids, holidays =\
-             self.ready_compensation(compensation_slots)
+             self.ready_compensation(compensation_slots,
+                                     time_preference=time_preference,
+                                     location_preference=location_preference)
 
         if extra_holidays:
             holidays = list(set(extra_holidays).union(set(holidays)))
@@ -80,7 +84,9 @@ class ConstraintModelEngine:
 
         return answers
     
-    def ready_compensation(self, compensation_slots):
+    def ready_compensation(self, compensation_slots,
+                            time_preference=False,
+                            location_preference=False):
         """
         Ensure validity of a slot and make it ready for query
         """
@@ -107,7 +113,9 @@ class ConstraintModelEngine:
             digitized_slot =\
                 self.query_formater.digitize_one_slot(compensation_slot)
             variable_slot =\
-                self.query_formater.turn_to_variable_slot(digitized_slot, index=_id)
+                self.query_formater.turn_to_variable_slot(digitized_slot, index=_id,
+                                                        time_var=not(time_preference),
+                                                        location_var=not(location_preference))
             slot_string =\
                 self.query_formater.convert_to_query_format(variable_slot)
             _, subject, _, _, subgroup, _, _ = digitized_slot

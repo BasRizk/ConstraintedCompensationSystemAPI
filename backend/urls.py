@@ -23,7 +23,7 @@ from api import views
 
 urlpatterns = [
     # path('all_slots', views.AllSlots.as_view()),
-    path('all_slots/<str:group_name>', views.AllSlots.as_view()),
+    # path('all_slots/<str:group_name>', views.AllSlots.as_view()),
     path('all_slots/<str:group_name>/<int:week>', views.AllSlots.as_view()),
     path('all_groups', views.AllGroups.as_view()),
     path('compensate/', views.CompensateSlot.as_view()),

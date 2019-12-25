@@ -211,15 +211,21 @@ class QueryFormater:
         return "schedule(%s,%s,%s,%s,%s)." %\
              (slots_string, str(holidays), subjects, groups, subgroups)
 
-    def turn_to_variable_slot(self, slot, index = 0):
+    def turn_to_variable_slot(self, slot, index = 0,
+                              time_var=True, location_var=True):
         """
         Takes slot to be compensated; and returns it in the required format
         by the constraint model
         """
-        _, subject, slot_type, group, subgroup, _, teacher = slot
+        time, subject, slot_type, group, subgroup, location, teacher = slot
         
-        return ("NUM" + str(index), subject, slot_type,
-                group, subgroup, "LOCATION" + str(index), teacher)
+        if time_var:
+            time = "NUM" + str(index)
+        if location_var:
+            location = "LOCATION" + str(index)
+        
+        return (time, subject, slot_type,
+                group, subgroup, location, teacher)
     
     def get_holiday_to_compensate(self, slots, holidays=[0],
                                   specific_group=None, limit=0,

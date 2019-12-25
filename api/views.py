@@ -59,6 +59,7 @@ def get_slotWeek(slot_id):
             return Slot.objects.values_list('slot_week').get(pk=slot_id)[0]
         except Slot.DoesNotExist:
             raise Http404
+        
 def get_object(slot_id):
         try:
             return tuple(Slot.objects
@@ -84,8 +85,43 @@ class CompensateSlot(APIView):
     """
     Ask for a compensation of one or more slots instances.
     """
+
+    @staticmethod
+    def get_to_compensate_slots_tuples(ids):
+        to_compensate_slots = []
+        for slot_id in ids_to_compensate:
+            slot = get_object(slot_id=slot_id)
+            if(slot):
+                # slot_tuple = get_object(slot_id=slot_id)
+                slot_tuple = (slot_id,) + slot_tuple
+                to_compensate_slots.append(slot_tuple)
+        return to_compensate_slots
+
+    def serve_preference_request(self, request):
+        id_to_compensate = request.data.get("id")
+        if id_to_compensate:
+            limit = request.data.get('limit')
+            if not limit:
+                limit = 2
+            to_compensate_slots =\
+                     self.get_to_compensate_slots_tuples([id_to_compensate])
+            if to_compensate_slots:
+                schedule_solver = ConstraintModelEngine.get_instance()
+                all_slots = get_all_objects(get_slotWeek(id_to_compensate))
+                schedule_solver.connect_schedule(all_slots)
+
+                possiblities =\
+                    schedule_solver.query_model(to_compensate_slots,
+                                                answers_limit=limit,
+                                                extra_holidays=extra_holidays,
+                                                time_preference=True)
+                return Response(possiblities, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
     def post(self, request):
         if request.method == 'POST':
+            if request.data.get('preference'):
+                self.serve_preference_request(request)
 
             ids_to_compensate = request.data.get('id')
             if ids_to_compensate:
@@ -94,17 +130,13 @@ class CompensateSlot(APIView):
                 if not limit:
                     limit = 2
 
-                to_compensate_slots = []
-                for slot_id in ids_to_compensate:
-                    slot = get_object(slot_id=slot_id)
-                    if(slot):
-                        slot_tuple = get_object(slot_id=slot_id)
-                        slot_tuple = (slot_id,) + slot_tuple
-                        to_compensate_slots.append(slot_tuple)
+                to_compensate_slots =\
+                     self.get_to_compensate_slots_tuples(ids_to_compensate)
 
                 if to_compensate_slots:
+                    one_of_the_ids = ids_to_compensate[0]
                     schedule_solver = ConstraintModelEngine.get_instance()
-                    all_slots = get_all_objects(get_slotWeek(slot_id))
+                    all_slots = get_all_objects(get_slotWeek(one_of_the_ids))
                     schedule_solver.connect_schedule(all_slots)
                     extra_holidays = request.data.get('extra_holidays')
                     # if not extra_holidays:
@@ -117,12 +149,6 @@ class CompensateSlot(APIView):
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    # def delete(self, request, pk, format=None):
-    #     slot = self.get_object(pk)
-    #     slot.delete()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class ConfirmCompensation(APIView):
     """
     Confirm compensation possibilities and save into DB
@@ -131,12 +157,18 @@ class ConfirmCompensation(APIView):
         if request.method == 'POST':
             ids = request.data.get('ids')
             compensations_possibility = request.data.get('compensations_possibility')
-            save_compensations(ids, compensations_possibility)
-            return Response(status=status.HTTP_200_OK)
+            not_updated_ids, updated_ids = self.save_compensations(ids, compensations_possibility)
+            back_response = {
+                "not_updated": not_updated_ids,
+                "updated_ids": updated_ids
+            }
+            return Response(back_response, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def save_compensations(self, ids, compensations_possibility):
         not_updated = set()
+        updated = []
+        # Updated is a list to expose any error!
         for _id in ids:
             num_key = "NUM" + str(_id)
             location_key = "LOCATION" + str(_id)
@@ -145,17 +177,15 @@ class ConfirmCompensation(APIView):
 
             
             if new_num and new_location:
-                # TODO update using both values, _id, and the week
                 Slot.objects.get(pk=_id).Update(slot_location=new_location, slot_num=new_num)
-                pass
+                updated.append(_id)
             elif new_num:
-                # TODO update one only
                 Slot.objects.get(pk=_id).Update(slot_num=new_num)
-                pass
+                updated.append(_id)
             elif new_location:
-                # TODO update one only (dumb but it is fine)
                 Slot.objects.get(pk=_id).Update(slot_location=new_location)
-                pass
+                updated.append(_id)
             else:
+                # Maybe return not updated to notify users, regarding the warning!
                 not_updated.add(_id)
-        # Maybe return not updated to notify users, regarding the warning!
+            return list(not_updated), updated
