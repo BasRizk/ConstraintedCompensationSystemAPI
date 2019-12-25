@@ -37,7 +37,7 @@ group = "5 csen i"
 compensation_slots = query_formater.get_holiday_to_compensate(all_slots,
                                                               specific_group=None,
                                                               holiday=holiday,
-                                                              limit=-1,
+                                                              limit=30,
                                                               verbose=True)
 
 query_statement = query_formater.create_query(all_slots_digitized,

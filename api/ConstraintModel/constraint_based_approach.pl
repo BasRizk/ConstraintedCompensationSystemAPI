@@ -26,32 +26,26 @@ schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
     % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
     print("Began"), nl,
 
+    % Extract variables for labeling later
+    extract_variables(SLOTS, VARIABLES),
+    print("VARIABLES = "), print(VARIABLES), nl,
+
     % (TIMING, SUBJECT(lec), SUBJECT_i_(nonlec))
     % No group assigned a lec and some tut. or lab at the same time of the same subject
     % TODO assure A group can not be assigned to multiple meetings at the same time.
     serialize_each_lec_with_its_companions(SLOTS),
     print("EACH LECS SERAILIZED WITH EACH OF ITS COMPANIONS"), nl,
-    
-    % Extract variables for labeling later
-    extract_variables(SLOTS, VARIABLES),
-    print("VARIABLES = "), print(VARIABLES), nl,
 
     % (TIMING, HOLIDAY)
     % Ensure proper domains on slots timings
     ensure_slots(SLOTS, HOLIDAY),
     print("TIMINGS DOMAIN ENSURED"), nl,
 
-
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
     serialize_subgroups(SLOTS, SUBGROUPS),
     print("SUBGROUPS SERIALIZED"), nl,
-
-    % (TIMING, TYPE, GROUP)
-    % No more than one lec given to the same group at the same time
-    % serialize_lecs_per_group(SLOTS, GROUPS),
-    % print("LEC SERIALIZED PER EACH GROUP"), nl,
     
     % (TIMING, TEACHER)
     % A staff member can not be assigned to multiple meetings at the same time.
@@ -120,12 +114,10 @@ no_slots_at_same_location(SLOTS):-
 all_different_locations_per_slot(-1,_).
 all_different_locations_per_slot(NUM, SLOTS):-
     NUM >= 0,
-    extract_locations_of_same_time_slots(NUM, SLOTS, LOCATIONS),
-    all_distinct(LOCATIONS),
-    % print("All_distinct Ensured"), nl,
     NEW_NUM #= NUM - 1,
-    % print(NUM), nl,
-    all_different_locations_per_slot(NEW_NUM, SLOTS).
+    all_different_locations_per_slot(NEW_NUM, SLOTS),
+    extract_locations_of_same_time_slots(NUM, SLOTS, LOCATIONS),
+    all_distinct(LOCATIONS).
 
 % set_of_locations(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS], MAX_NUM_OF_CLASS_A):-
 %     MAX_NUM_OF_CLASS_A >= 0,
@@ -149,10 +141,11 @@ no_slots_assigned_same_teacher(SLOTS):-
 all_different_teachers_per_slot(-1,_).
 all_different_teachers_per_slot(NUM, SLOTS):-
     NUM >= 0,
+    NEW_NUM #= NUM - 1,
+    all_different_teachers_per_slot(NEW_NUM, SLOTS),
     extract_teachers_of_same_time_slots(NUM , SLOTS, TEACHERS),
-    all_distinct(TEACHERS),
-    NEW_NUM #= NUM - 1, 
-    all_different_teachers_per_slot(NEW_NUM, SLOTS).
+    % print("EXTRACTED TEACHERS: "), print(TEACHERS), nl,
+    all_distinct(TEACHERS).
 
 extract_teachers_of_same_time_slots(_, [] ,[]).
 extract_teachers_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [TEACHER|TEACHERS]):-  
@@ -192,33 +185,8 @@ ensure_allocation([SLOT|SLOTS], TOTAL_COST):-
 /**
  * Return list of ones of equal length
  */
-% corresponding_list_of_ones([], []).
-% corresponding_list_of_ones([_|Xs], [1|ONES]):-
-%     corresponding_list_of_ones(Xs, ONES).
 corresponding_list_of_ones(Xs, ONES):-
     length(Xs, N), length(ONES, N), ONES ins 1..1.
-
-/**
- * Serialize lectures for each group
- */
-serialize_lecs_per_group(_,[]).
-serialize_lecs_per_group(SLOTS, [GROUP|GROUPS]):-
-    % Once as there are two many possiblities of the same permutation of the timing_list
-    % because of - TYPE does not equal or group does not equal - line
-    once(list_lec_group_timings(SLOTS, GROUP, TIMINGS_LIST)),
-    corresponding_list_of_ones(TIMINGS_LIST, ONES),
-    serialized(TIMINGS_LIST, ONES),
-    serialize_lecs_per_group(SLOTS, GROUPS).
-
-list_lec_group_timings([],_,[]).
-list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, TIMINGS_LIST):-
-    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
-    SLOT = (_, _, TYPE, GROUP, _, _, _),
-    (TYPE \= small_lec; TYPE \= big_lec; GROUP \= TARGET_GROUP).
-list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
-    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
-    SLOT = (TIME, _, TYPE, TARGET_GROUP, _, _, _),
-    (TYPE = small_lec; TYPE = big_lec).
 
 /**
  * Serialize all types of slots for each subgroup
@@ -246,26 +214,18 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
  */
 serialize_each_lec_with_its_companions(SLOTS):-
     split_lec_nonlec(SLOTS, LEC_SLOTS, NONLEC_SLOTS),
-    % print("Nonlecs Are: "), print(NONLEC_SLOTS), nl,
-    % extract_non_lec_slots(SLOTS, SUBJECTS, LIST_NONLEC_SLOTS),
     serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS).
-    % serialize_with_companion(LEC_SLOTS, LIST_NONLEC_SLOTS).
-
-% serialize_with_companion(_, []).
-% serialize_with_companion(LEC_SLOTS, [NONLEC_SLOTS|LIST_NONLEC_SLOTS]):-
-%     serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS),
-%     serialize_with_companion(LEC_SLOTS, LIST_NONLEC_SLOTS).
 
 serialize_for_subject([], _).
 serialize_for_subject([LEC|LEC_SLOTS], NONLEC_SLOTS):-
     % print("Serializing LEC: "), print(LEC), nl,
     % print("Nonlecs Are: "), print(NONLEC_SLOTS), nl,
     % once(serialize_for_subject_helper(LEC, NONLEC_SLOTS)),
+    serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS),
     once(pair_subject_and_companion(LEC, NONLEC_SLOTS, PAIRS)),
     % print("PAIRS: "), print(PAIRS), nl,
-    serialize_pairs(PAIRS),
+    serialize_pairs(PAIRS).
     % print("Serialized FOR THAT LECTURE"), nl,
-    serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS).
 
 pair_subject_and_companion(_,[],[]).
 pair_subject_and_companion(LEC, [NONLEC|NONLEC_SLOTS], PAIRS):-
@@ -282,64 +242,6 @@ serialize_pairs([]).
 serialize_pairs([(A, B)|PAIRS]):-
     A #\= B,
     serialize_pairs(PAIRS).
-
-% serialize_for_subject_helper(_, []).
-% serialize_for_subject_helper(LEC, [NONLEC|NONLEC_SLOTS]):-
-%     % If not same group, but same subject, go further, but ignore this
-%     % print("Are THEY NOT EQUAL?"), nl,
-%     % print("NONLEC: "), print(NONLEC), nl,
-%     LEC = (_, SUBJECT1, _, GROUP1, _, _, _),
-%     NONLEC = (_, SUBJECT2, _, GROUP2, _, _, _),
-%     (SUBJECT1 \= SUBJECT2; GROUP1 \= GROUP2),
-%     serialize_for_subject_helper(LEC, NONLEC_SLOTS).
-% serialize_for_subject_helper(LEC, [NONLEC|NONLEC_SLOTS]):-
-%     LEC = (NUM1, SUBJECT, _, GROUP, _, _, _),
-%     NONLEC = (NUM2, SUBJECT, _, GROUP, _, _, _),
-%     print("About To Serialize: "), nl,
-%     print("LEC: "), print(LEC), nl,
-%     print("NONLEC: "), print(NONLEC), nl,
-%     NUM1 #\= NUM2,
-%     % serialized([NUM1, NUM2], [1, 1]),
-%     print("ALL_DISTINCT (LEC, NONLEC) ASSURED"), nl,
-%     serialize_for_subject_helper(LEC, NONLEC_SLOTS).
-
-
-    % print("INDEED"), nl.
-% serialize_for_subject_helper(LEC, [NONLEC|_]):-
-%     % No need to go further in this list; all of it from the same subject
-%     LEC = (_, SUBJECT1, _, _, _, _, _),
-%     NONLEC = (_, SUBJECT2, _, _, _, _, _),
-%     SUBJECT2 \= SUBJECT1.
-
-% extract_non_lec_slots(_, [], []).
-% extract_non_lec_slots(SLOTS, [SUBJECT|SUBJECTS], [ONE_LIST|LIST_NONLEC_SLOTS]):-
-%     extract_non_lec_slots_per_subject(SLOTS, SUBJECT, ONE_LIST),
-%     extract_non_lec_slots(SLOTS, SUBJECTS, LIST_NONLEC_SLOTS).
-
-% extract_non_lec_slots_per_subject([], _, []).
-% extract_non_lec_slots_per_subject([SLOT|SLOTS], TARGET_SUBJECT, NONLEC_SLOTS):-
-%     SLOT = (_, SUBJECT, TYPE, _, _, _, _),
-%     (SUBJECT \= TARGET_SUBJECT; TYPE = small_lec; TYPE = big_lec),
-%     extract_non_lec_slots_per_subject(SLOTS, TARGET_SUBJECT, NONLEC_SLOTS).
-
-% extract_non_lec_slots_per_subject([SLOT|SLOTS], TARGET_SUBJECT, [SLOT|NONLEC_SLOTS]):-
-%     SLOT = (_, TARGET_SUBJECT, TYPE, _, _, _, _),
-%     (TYPE \= small_lec, TYPE \= big_lec),
-%     extract_non_lec_slots_per_subject(SLOTS, TARGET_SUBJECT, NONLEC_SLOTS).
-
-% list_lecs([],[]).
-% list_lecs([SLOT|SLOTS], [SLOT|LEC_SLOTS]):-
-%     SLOT = (_, _, TYPE, _, _, _,_),
-%     (TYPE = small_lec; TYPE = big_lec),
-%     list_lecs(SLOTS, LEC_SLOTS).
-% list_lecs([SLOT|SLOTS], LEC_SLOTS):-
-%     SLOT = (_, _, TYPE, _, _, _,_),
-%     (TYPE \= small_lec, TYPE \= big_lec),
-%     list_lecs(SLOTS, LEC_SLOTS).
-% list_lecs([SLOT|SLOTS], [SLOT|LEC_SLOTS]):-
-%     SLOT = (_, _, TYPE, _, _, _,_),
-%     (TYPE = small_lec; TYPE = big_lec),
-%     list_lecs(SLOTS, LEC_SLOTS).
 
 split_lec_nonlec([], [], []).
 split_lec_nonlec([SLOT|SLOTS], LECS, [SLOT|NONLECS]):-
