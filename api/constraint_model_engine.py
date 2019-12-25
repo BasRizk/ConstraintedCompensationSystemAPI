@@ -39,7 +39,7 @@ class ConstraintModelEngine:
 
     def connect_schedule(self, all_slots):
         self.all_slots = all_slots
-        self.sample_weekson_dict(all_slots)
+        self.sample_weekson_dict()
 
     def query_model(self, compensation_slots, answers_limit=0, extra_holidays=None):
         """
@@ -117,12 +117,6 @@ class ConstraintModelEngine:
             subjects.add(subject)
             subgroups.add(subgroup)
 
-        # holidays = list(holidays)
-        # # print(holidays)
-        # if len(holidays) != 1:
-        #     print("Not implemented yet compensation on more than one day!")
-        #     return None, None, -1
-
         return (slot_strings, list(subjects), list(subgroups)), ids, list(holidays)
 
     def decode_slot(self, slot):
@@ -136,8 +130,16 @@ class ConstraintModelEngine:
         subgroup = self.query_formater.decode_subgroup(subgroup)
         return num, subject, slot_type, group, subgroup, location, teacher
 
-    def sample_weekson_dict(self, all_slots):
-        all_groups = self.query_formater.get_all_groups(all_slots)
+    def sample_weekson_dict(self, all_groups=None):
+        """
+        Generate list of the default weekon days of each group
+        """
+        print(list(all_groups))
+        if not all_groups:
+            if not self.all_slots:
+                print("WARNING:: connect_schedule first.")
+                return
+            all_groups = self.query_formater.get_all_groups(self.all_slots)
         self.weekson_dict = {}
         for group in list(all_groups):
             if "1engineering" in group:

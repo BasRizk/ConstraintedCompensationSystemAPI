@@ -42,7 +42,15 @@ class AllGroups(APIView):
         """
         groups = Slot.objects.order_by('slot_group').values_list(
             'slot_group', flat=True).distinct()
-        return Response({"groups": groups}, status=status.HTTP_200_OK)
+
+        # TODO maybe make it more dynamic from the db!
+        schedule_solver = ConstraintModelEngine.get_instance()
+        schedule_solver.sample_weekson_dict(all_groups=groups)
+        back_response = {
+            "groups": groups,
+            "weekson_dict": schedule_solver.weekson_dict
+        }
+        return Response(back_response, status=status.HTTP_200_OK)
 
 
 
