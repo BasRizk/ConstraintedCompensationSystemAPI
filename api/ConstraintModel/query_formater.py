@@ -332,3 +332,15 @@ class QueryFormater:
         key_list = list(self.teachers_dict.keys())
         val_list = list(self.teachers_dict.values())
         return key_list[val_list.index(encoding)]
+    
+    def get_all_groups(self, all_slots):
+        """
+        Listify groups
+        """
+        all_groups = set()
+        for slot in all_slots:
+            (slot_num, _, _, group, _, _, _) = slot
+            all_groups.add(group)
+        all_groups = sorted(all_groups)
+        return all_groups
+    

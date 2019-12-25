@@ -34,11 +34,12 @@ class ConstraintModelEngine:
             self.prolog.consult(self.PL_FILENAME)
             # print('PROLOG CONSULTED')
             self.all_slots = None
+            self.weekson_dict = None
             ConstraintModelEngine.__instance = self
 
     def connect_schedule(self, all_slots):
-        # self.days_schedules = None
         self.all_slots = all_slots
+        self.sample_weekson_dict(all_slots)
 
     def query_model(self, compensation_slots, answers_limit=0):
         """
@@ -138,3 +139,12 @@ class ConstraintModelEngine:
         group = self.query_formater.decode_group(group)
         subgroup = self.query_formater.decode_subgroup(subgroup)
         return num, subject, slot_type, group, subgroup, location, teacher
+
+    def sample_weekson_dict(self, all_slots):
+        all_groups = self.query_formater.get_all_groups(all_slots)
+        self.weekson_dict = {}
+        for group in list(all_groups):
+            if "1engineering" in group:
+                self.weekson_dict[group] = [0] + [i for i in range(3, 15)]
+            else:
+                self.weekson_dict[group] = [0] + [i for i in range(1, 13)]
