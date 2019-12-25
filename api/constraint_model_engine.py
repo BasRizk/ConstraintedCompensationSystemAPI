@@ -41,10 +41,11 @@ class ConstraintModelEngine:
         self.all_slots = all_slots
         self.sample_weekson_dict(all_slots)
 
-    def query_model(self, compensation_slots, answers_limit=0):
+    def query_model(self, compensation_slots, answers_limit=0, extra_holidays=None):
         """
         Creates a query to the constraint model
         """
+        # TODO maybe return msg lock if query_lock instead of waiting
         while self._query_lock:
             pass
         self._query_lock = True
@@ -53,21 +54,16 @@ class ConstraintModelEngine:
 
         variable_slots, compensation_ids, holidays =\
              self.ready_compensation(compensation_slots)
-        # print(variable_slots)
-        # print(compensation_ids)
-        # print(holiday)
-        # if not variable_slots:
-        #     return {"msg": "Not implemented yet to compensate on" +
-        #                     "different days at the same time"}
+
+        if extra_holidays:
+            holidays = list(set(extra_holidays).union(set(holidays)))
 
         query_statement = self.query_formater.create_query(
             slots_digitized, variable_slots, holidays=holidays)
     
-        # print(query_statement)
-
         answers = []
         for option in self.prolog.query(query_statement):
-            # print("RESULT: " + str(option))
+
             one_answer = {}
             for _id in compensation_ids:
                 num_var = "NUM" + str(_id)
@@ -81,7 +77,7 @@ class ConstraintModelEngine:
                 break
         
         self._query_lock = False
-        # print(answers)
+
         return answers
     
     def ready_compensation(self, compensation_slots):

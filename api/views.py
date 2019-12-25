@@ -72,6 +72,7 @@ class CompensateSlot(APIView):
     """
     def post(self, request):
         if request.method == 'POST':
+
             ids_to_compensate = request.data.get('id')
             if ids_to_compensate:
 
@@ -91,9 +92,13 @@ class CompensateSlot(APIView):
                     schedule_solver = ConstraintModelEngine.get_instance()
                     all_slots = get_all_objects()
                     schedule_solver.connect_schedule(all_slots)
+                    extra_holidays = request.data.get('extra_holidays')
+                    # if not extra_holidays:
+                    #     extra_holidays = None
                     possiblities =\
                         schedule_solver.query_model(to_compensate_slots,
-                                                    answers_limit=limit)
+                                                    answers_limit=limit,
+                                                    extra_holidays=extra_holidays)
                     return Response(possiblities, status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
