@@ -16,12 +16,12 @@ class AllSlots(APIView):
     List all slots
     """
 
-    def get(self, request, group_name=None, format=None):
+    def get(self, request, group_name=None, week=None, format=None):
         """
         Respond with all existing slots or group-specific
         """
         if group_name:
-            slots = Slot.objects.filter(slot_group=group_name)\
+            slots = Slot.objects.filter(slot_group=group_name, slot_week=week)\
                 .order_by('slot_num')
             serializer = SlotSerializer(slots, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
