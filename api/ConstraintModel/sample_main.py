@@ -78,7 +78,6 @@ def to_json_fixture(query_formater, all_slots, model_name = "api.slot"):
     slot_counter = 0
     all_slots_records = []
     for slot in all_slots:
-        slot_counter += 1
         slot_num, slot_subject, slot_type,\
         slot_group, slot_subgroup, slot_location, slot_teacher = slot
         
@@ -102,6 +101,7 @@ def to_json_fixture(query_formater, all_slots, model_name = "api.slot"):
             
             db_record = {}
             db_record["model"] = model_name
+            slot_counter += 1
             db_record["pk"] = slot_counter
             db_record["fields"] = slot_record
     #        db_record = json.dumps(db_record)
