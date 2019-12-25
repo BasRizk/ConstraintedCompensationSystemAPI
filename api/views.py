@@ -160,9 +160,11 @@ class CompensateSlot(APIView):
                         schedule_solver.query_model(to_compensate_slots,
                                                     answers_limit=limit,
                                                     extra_holidays=extra_holidays)
-                    
-                    return Response(possiblities, status=status.HTTP_200_OK)
-                back_response = {"msg": "ids in list of (id) does not exist"}
+                    if possiblities is not None:
+                        return Response(possiblities, status=status.HTTP_200_OK)
+                    back_response = {"msg": "System is locked at the point!"}
+                else:
+                    back_response = {"msg": "ids in list of (id) does not exist"}
             else:
                 back_response = {"msg": "list of (id) needed"}
         else:

@@ -47,9 +47,11 @@ class ConstraintModelEngine:
         """
         Creates a query to the constraint model
         """
-        # TODO maybe return msg lock if query_lock instead of waiting
-        while self._query_lock:
-            pass
+        # return msg lock if query_lock instead of waiting
+        if self._query_lock:
+            return None
+        # while self._query_lock:
+        #     pass
         self._query_lock = True
 
         slots_digitized = self.query_formater.digitize(self.all_slots)
