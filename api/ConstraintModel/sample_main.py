@@ -32,17 +32,17 @@ all_slots = query_formater.clean_formatted_slots(all_slots)
 all_slots_digitized = query_formater.digitize(all_slots)
 
 
-holiday = 0
+holidays = [0, 1]
 group = "5 csen i"
 compensation_slots = query_formater.get_holiday_to_compensate(all_slots,
                                                               specific_group=None,
-                                                              holiday=holiday,
-                                                              limit=0,
+                                                              holidays=holidays,
+                                                              limit=20,
                                                               verbose=True)
 
 query_statement = query_formater.create_query(all_slots_digitized,
                                               compensation_slots,
-                                              holiday)
+                                              holidays)
 
 
 limit = 2

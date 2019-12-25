@@ -1,5 +1,5 @@
 """Constraint Model Engine"""
-from pyswip import Prolog
+# from pyswip import Prolog
 # from .ConstraintModel.schedule_parser import ScheduleParser
 from .ConstraintModel.query_formater import QueryFormater
 # import os
@@ -50,17 +50,17 @@ class ConstraintModelEngine:
 
         slots_digitized = self.query_formater.digitize(self.all_slots)
 
-        variable_slots, compensation_ids, holiday =\
+        variable_slots, compensation_ids, holidays =\
              self.ready_compensation(compensation_slots)
         # print(variable_slots)
         # print(compensation_ids)
         # print(holiday)
-        if not variable_slots:
-            return {"msg": "Not implemented yet to compensate on" +
-                            "different days at the same time"}
+        # if not variable_slots:
+        #     return {"msg": "Not implemented yet to compensate on" +
+        #                     "different days at the same time"}
 
         query_statement = self.query_formater.create_query(
-            slots_digitized, variable_slots, holiday=holiday)
+            slots_digitized, variable_slots, holidays=holidays)
     
         # print(query_statement)
 
@@ -120,13 +120,13 @@ class ConstraintModelEngine:
             subjects.add(subject)
             subgroups.add(subgroup)
 
-        holidays = list(holidays)
-        # print(holidays)
-        if len(holidays) != 1:
-            print("Not implemented yet compensation on more than one day!")
-            return None, None, -1
+        # holidays = list(holidays)
+        # # print(holidays)
+        # if len(holidays) != 1:
+        #     print("Not implemented yet compensation on more than one day!")
+        #     return None, None, -1
 
-        return (slot_strings, list(subjects), list(subgroups)), ids, holidays[0]
+        return (slot_strings, list(subjects), list(subgroups)), ids, list(holidays)
 
     def decode_slot(self, slot):
         """

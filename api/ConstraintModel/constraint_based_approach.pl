@@ -22,50 +22,43 @@
 %                          \/
 % 
 
-schedule(SLOTS, HOLIDAY, SUBJECTS, GROUPS, SUBGROUPS):-
-    % TODO Maybe SUBJECTS, GROUPS, and SUBGROUPS 
+schedule(SLOTS, HOLIDAYS, _, _, SUBGROUPS):-
     print("Began"), nl,
-    
-    % Extract variables for labeling later
-    extract_variables(SLOTS, VARIABLES),
-    % print("VARIABLES = "), print(VARIABLES), nl,
 
-    % TODO COMPLETE
-    % A group can not be assigned to multiple meetings at the same time.
-    
+    % => Extract variables for labeling later
+    extract_variables(SLOTS, VARIABLES),
+    print("VARIABLES = "), print(VARIABLES), nl,
+
+    % => Ensuring Domains
     % (TIMING, HOLIDAY)
     % Ensure proper domains on slots timings
-    ensure_slots(SLOTS, HOLIDAY),
-    % print("TIMINGS DOMAIN ENSURED"), nl,
+    ensure_slots(SLOTS, HOLIDAYS),
+    print("TIMINGS DOMAIN ENSURED"), nl,
+    % (TIMING, LOCATION)
+    % Ensure allocation of resources
+    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
+    print("LOCATIONS DOMAIN ENSURED"), nl,
 
-
+    % => A group can not be assigned to multiple meetings at the same time.
+    % (TIMING, SUBJECT(lec), SUBJECT_i_(nonlec))
+    % No group assigned a lec and some tut. or lab at the same time of the same subject
+    serialize_each_lec_with_its_companions(SLOTS),
+    print("EACH LECS SERAILIZED WITH EACH OF ITS COMPANIONS"), nl,
     % (TIMING, SUBGROUP)
     % No subgroup have more than one slot at the same time
     % Implicitly no lecture at the same time of corresponding tut. ensured
     serialize_subgroups(SLOTS, SUBGROUPS),
-    % print("SUBGROUPS SERIALIZED"), nl,
-
-    % (TIMING, TYPE, GROUP)
-    % No more than one lec given to the same group at the same time
-    serialize_lecs_per_group(SLOTS, GROUPS),
-    % print("LEC SERIALIZED PER EACH GROUP"), nl,
+    print("SUBGROUPS SERIALIZED"), nl,
     
     % (TIMING, TEACHER)
     % A staff member can not be assigned to multiple meetings at the same time.
     no_slots_assigned_same_teacher(SLOTS),
-    % print("NO OVERLAPING-TEACHER ENSURED"), nl,
-
-    % (TIMING, LOCATION)
-    % Ensure allocation of resources
-    ensure_allocation(SLOTS, LOCATION_TOTAL_COST),
-    % print("LOCATIONS DOMAIN ENSURED"), nl,
+    print("NO OVERLAPING-TEACHER ENSURED"), nl,
 
     % (TIMING, LOCATION)
     % A room can not be assigned to multiple meetings at the same time.
     no_slots_at_same_location(SLOTS),
-    % print("NO OVERLAPING-LOCATION ENSURED"), nl,
-
-
+    print("NO OVERLAPING-LOCATION ENSURED"), nl,
 
     once(labeling([min(LOCATION_TOTAL_COST)], VARIABLES)).
 
@@ -81,12 +74,25 @@ extract_variables([SLOT|SLOTS], [NUM, LOCATION|VAR_SLOTS]):-
     SLOT = (NUM, _, _, _, _, LOCATION, _),
     var(NUM), var(LOCATION),
     extract_variables(SLOTS, VAR_SLOTS).
+extract_variables([SLOT|SLOTS], [NUM|VAR_SLOTS]):-
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
+    var(NUM), nonvar(LOCATION),
+    extract_variables(SLOTS, VAR_SLOTS).
+extract_variables([SLOT|SLOTS], [LOCATION|VAR_SLOTS]):-
+    SLOT = (NUM, _, _, _, _, LOCATION, _),
+    nonvar(NUM), var(LOCATION),
+    extract_variables(SLOTS, VAR_SLOTS).
 
 /**
  * Ensure slots structure, and NUM of slot validity
  */
-ensure_slots([], _).
-ensure_slots([SLOT|SLOTS], HOLIDAY):-
+ensure_slots(_, []).
+ensure_slots(SLOTS, [HOLIDAY|HOLIDAYS]):-
+    ensure_slots_on_holiday(SLOTS, HOLIDAY),
+    ensure_slots(SLOTS, HOLIDAYS).
+
+ensure_slots_on_holiday([], _).
+ensure_slots_on_holiday([SLOT|SLOTS], HOLIDAY):-
     SLOT = (NUM, SUBJECT, TYPE, GROUP, SUBGROUP, _, _),
     (
         (HOLIDAY = 0, NUM in 5..29);
@@ -100,7 +106,7 @@ ensure_slots([SLOT|SLOTS], HOLIDAY):-
     nonvar(TYPE),
     nonvar(GROUP),
     nonvar(SUBGROUP),
-    ensure_slots(SLOTS, HOLIDAY).
+    ensure_slots_on_holiday(SLOTS, HOLIDAY).
 
 /**
  * No two slots at the same time placed the same location
@@ -111,12 +117,10 @@ no_slots_at_same_location(SLOTS):-
 all_different_locations_per_slot(-1,_).
 all_different_locations_per_slot(NUM, SLOTS):-
     NUM >= 0,
-    extract_locations_of_same_time_slots(NUM, SLOTS, LOCATIONS),
-    all_distinct(LOCATIONS),
-    % print("All_distinct Ensured"), nl,
     NEW_NUM #= NUM - 1,
-    % print(NUM), nl,
-    all_different_locations_per_slot(NEW_NUM, SLOTS).
+    all_different_locations_per_slot(NEW_NUM, SLOTS),
+    extract_locations_of_same_time_slots(NUM, SLOTS, LOCATIONS),
+    all_distinct(LOCATIONS).
 
 % set_of_locations(TARGET_NUM, [SLOT|SLOTS], [LOCATION|LOCATIONS], MAX_NUM_OF_CLASS_A):-
 %     MAX_NUM_OF_CLASS_A >= 0,
@@ -140,10 +144,11 @@ no_slots_assigned_same_teacher(SLOTS):-
 all_different_teachers_per_slot(-1,_).
 all_different_teachers_per_slot(NUM, SLOTS):-
     NUM >= 0,
+    NEW_NUM #= NUM - 1,
+    all_different_teachers_per_slot(NEW_NUM, SLOTS),
     extract_teachers_of_same_time_slots(NUM , SLOTS, TEACHERS),
-    all_distinct(TEACHERS),
-    NEW_NUM #= NUM - 1, 
-    all_different_teachers_per_slot(NEW_NUM, SLOTS).
+    % print("EXTRACTED TEACHERS: "), print(TEACHERS), nl,
+    all_distinct(TEACHERS).
 
 extract_teachers_of_same_time_slots(_, [] ,[]).
 extract_teachers_of_same_time_slots(TARGET_NUM, [SLOT|SLOTS], [TEACHER|TEACHERS]):-  
@@ -183,41 +188,18 @@ ensure_allocation([SLOT|SLOTS], TOTAL_COST):-
 /**
  * Return list of ones of equal length
  */
-corresponding_list_of_ones([], []).
-corresponding_list_of_ones([_|Xs], [1|ONES]):-
-    corresponding_list_of_ones(Xs, ONES).
-
-/**
- * Serialize lectures for each group
- */
-serialize_lecs_per_group(_,[]).
-serialize_lecs_per_group(SLOTS, [GROUP|GROUPS]):-
-    serialize_lecs_per_group(SLOTS, GROUPS),
-    % Once as there are two many possiblities of the same permutation of the timing_list
-    % because of - TYPE does not equal or group does not equal - line
-    once(list_lec_group_timings(SLOTS, GROUP, TIMINGS_LIST)),
-    corresponding_list_of_ones(TIMINGS_LIST, ONES),
-    serialized(TIMINGS_LIST, ONES).
-
-list_lec_group_timings([],_,[]).
-list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, TIMINGS_LIST):-
-    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
-    SLOT = (_, _, TYPE, GROUP, _, _, _),
-    (TYPE \= small_lec; TYPE \= big_lec; GROUP \= TARGET_GROUP).
-list_lec_group_timings([SLOT|SLOTS], TARGET_GROUP, [TIME|TIMINGS_LIST]):-
-    list_lec_group_timings(SLOTS, TARGET_GROUP, TIMINGS_LIST),
-    SLOT = (TIME, _, TYPE, TARGET_GROUP, _, _, _),
-    (TYPE = small_lec; TYPE = big_lec).
+corresponding_list_of_ones(Xs, ONES):-
+    length(Xs, N), length(ONES, N), ONES ins 1..1.
 
 /**
  * Serialize all types of slots for each subgroup
  */
 serialize_subgroups(_,[]).
 serialize_subgroups(SLOTS, [SUBGROUP|SUBGROUPS]):-
-    serialize_subgroups(SLOTS, SUBGROUPS),
     list_subgroup_timings(SLOTS, SUBGROUP, TIMINGS_LIST),
     corresponding_list_of_ones(TIMINGS_LIST, ONES),
-    serialized(TIMINGS_LIST, ONES).
+    serialized(TIMINGS_LIST, ONES),
+    serialize_subgroups(SLOTS, SUBGROUPS).
 
 list_subgroup_timings([],_,[]).
 list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, TIMINGS_LIST):-
@@ -228,6 +210,55 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, TIMINGS_LIST):-
 list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
     SLOT = (TIME, _, _, _, TARGET_SUBGROUP, _, _),
     list_subgroup_timings(SLOTS, TARGET_SUBGROUP, TIMINGS_LIST).
+
+
+/**
+ * Serialize lecs of a subject taken by a group
+ * with each slot of the same subject taken by that group
+ * 
+ * Note: Does not care about other subjects taken by that group
+ */
+serialize_each_lec_with_its_companions(SLOTS):-
+    split_lec_nonlec(SLOTS, LEC_SLOTS, NONLEC_SLOTS),
+    serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS).
+
+serialize_for_subject([], _).
+serialize_for_subject([LEC|LEC_SLOTS], NONLEC_SLOTS):-
+    % print("Serializing LEC: "), print(LEC), nl,
+    % print("Nonlecs Are: "), print(NONLEC_SLOTS), nl,
+    % once(serialize_for_subject_helper(LEC, NONLEC_SLOTS)),
+    serialize_for_subject(LEC_SLOTS, NONLEC_SLOTS),
+    once(pair_subject_and_companion(LEC, NONLEC_SLOTS, PAIRS)),
+    % print("PAIRS: "), print(PAIRS), nl,
+    serialize_pairs(PAIRS).
+    % print("Serialized FOR THAT LECTURE"), nl,
+
+pair_subject_and_companion(_,[],[]).
+pair_subject_and_companion(LEC, [NONLEC|NONLEC_SLOTS], PAIRS):-
+    LEC = (_, SUBJECT1, _, GROUP1, _, _, _),
+    NONLEC = (_, SUBJECT2, _, GROUP2, _, _, _),
+    (SUBJECT1 \= SUBJECT2; GROUP1 \= GROUP2),
+    pair_subject_and_companion(LEC, NONLEC_SLOTS, PAIRS).
+pair_subject_and_companion(LEC, [NONLEC|NONLEC_SLOTS], [(NUM1, NUM2)|PAIRS]):-
+    LEC = (NUM1, SUBJECT, _, GROUP, _, _, _),
+    NONLEC = (NUM2, SUBJECT, _, GROUP, _, _, _),
+    pair_subject_and_companion(LEC, NONLEC_SLOTS, PAIRS).
+
+serialize_pairs([]).
+serialize_pairs([(A, B)|PAIRS]):-
+    A #\= B,
+    serialize_pairs(PAIRS).
+
+split_lec_nonlec([], [], []).
+split_lec_nonlec([SLOT|SLOTS], LECS, [SLOT|NONLECS]):-
+    SLOT = (_, _, TYPE, _, _, _,_),
+    (TYPE \= small_lec, TYPE \= big_lec),
+    split_lec_nonlec(SLOTS, LECS, NONLECS).
+split_lec_nonlec([SLOT|SLOTS], [SLOT|LECS], NONLECS):-
+    SLOT = (_, _, TYPE, _, _, _,_),
+    (TYPE = small_lec; TYPE = big_lec),
+    split_lec_nonlec(SLOTS, LECS, NONLECS).
+
 
 
 
@@ -246,12 +277,3 @@ list_subgroup_timings([SLOT|SLOTS], TARGET_SUBGROUP, [TIME|TIMINGS_LIST]):-
 % 6. Perferences -- (UI requirement)*
 % A faculty member should be able to use the interface to insert the slots in which prefer/ do not prefer to
 % have the compensations in. The system should try to satisfy the preferences as much as possible.
-
-% 
-% The rooms/halls/labs are counted for each semester alone then summed up at the end of each sheet.
-% For your project, the maximum locations available per slot should be as follows:
-% Rooms : 50
-% Large halls (capacity 230) : 5
-% Small halls (capacity 100) :1
-% Computer labs : 8
-% 
