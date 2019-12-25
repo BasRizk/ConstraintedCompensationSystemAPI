@@ -60,20 +60,20 @@ for soln in prolog.query(query_statement):
 print("END PROLOG")
 
 
-def sample_weekson_dict(parser, all_slots):
-    all_groups = parser.get_all_groups(all_slots)
+def sample_weekson_dict(query_formater, all_slots):
+    all_groups = query_formater.get_all_groups(all_slots)
     weekson_dict = {}
     for group in list(all_groups):
         if "1engineering" in group:
-            weekson_dict[group] = [i for i in range(3, 15)]
+            weekson_dict[group] = [0] + [i for i in range(3, 15)]
         else:
-            weekson_dict[group] = [i for i in range(0, 13)]
+            weekson_dict[group] = [0] + [i for i in range(1, 13)]
     return weekson_dict
     
-def to_json_fixture(parser, all_slots, model_name = "api.slot"):
+def to_json_fixture(query_formater, all_slots, model_name = "api.slot"):
     import json
     
-    weekson_dict = sample_weekson_dict(parser, all_slots)
+    weekson_dict = sample_weekson_dict(query_formater, all_slots)
     
     slot_counter = 0
     all_slots_records = []

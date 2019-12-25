@@ -398,15 +398,4 @@ class ScheduleParser:
                 worksheet.set_column(idx, idx, 40, wrap_format)  # set column width
 
         writer.save()
-        
-    def get_all_groups(self, all_slots):
-        """
-        Listify groups
-        """
-        all_groups = set()
-        for slot in all_slots:
-            (slot_num, _, _, group, _, _, _) = slot
-            all_groups.add(group)
-        all_groups = sorted(all_groups)
-        return all_groups
     
