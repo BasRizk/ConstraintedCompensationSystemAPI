@@ -47,12 +47,12 @@ class CompensationSlotSerializer(serializers.HyperlinkedModelSerializer):
     """
     class Meta:
         model = Slot
-        fields = ['id', 'slot_date', 'slot_id', 'slot_num', 'slot_subject', 'slot_type',
+        fields = ['id', 'slot_week', 'slot_id', 'slot_num', 'slot_subject', 'slot_type',
                   'slot_group', 'slot_subgroup', 'slot_location',
                   'slot_teacher']
 
     id = serializers.IntegerField(read_only=True)
-    slot_date = serializers.DateField(required=True)
+    slot_week = serializers.IntegerField(required=True)
     slot_id = serializers.IntegerField(required=True)
     slot_num = serializers.IntegerField(required=True)
     slot_subject = serializers.CharField(required=True, allow_blank=False)
@@ -72,7 +72,7 @@ class CompensationSlotSerializer(serializers.HyperlinkedModelSerializer):
         """
         Update and return an existing `Slot` instance, given the validated data.
         """
-        instance.slot_date = validated_data.get('slot_date', instance.slot_date)
+        instance.slot_week = validated_data.get('slot_week', instance.slot_week)
         instance.slot_id = validated_data.get('slot_id', instance.slot_id)
         instance.slot_num = validated_data.get('slot_num', instance.slot_num)
         instance.slot_subject = validated_data.get('slot_subject', instance.slot_subject)

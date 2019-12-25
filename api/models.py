@@ -5,6 +5,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 SLOT_NUM_VALIDATORS = [MinValueValidator(0), MaxValueValidator(29)]
 SLOT_LOCATION_VALIDATORS = [MinValueValidator(0), MaxValueValidator(63)]
+SLOT_WEEK_VALIDATORS = [MinValueValidator(1), MaxValueValidator(14)]
 # SLOT_TYPE_CHOICES = ["big_lec", "small_lec", "lab", "tut"]
 
 
@@ -43,7 +44,7 @@ class CompensatedSlot(models.Model):
     DB Model representing a single slot in the compensation schedule
     """
     id = models.AutoField(primary_key=True)
-    slot_date = models.DateField()
+    slot_week = models.IntegerField(validators=SLOT_WEEK_VALIDATORS)
     slot_id = models.IntegerField()
     slot_num = models.IntegerField(validators=SLOT_NUM_VALIDATORS)
     slot_subject = models.CharField(max_length=60)
@@ -55,7 +56,7 @@ class CompensatedSlot(models.Model):
 
     def __str__(self):
         return '{}, {}, {}, {}, {}, {}, {}, {}, {}'.format(
-                                            self.slot_date,
+                                            self.slot_week,
                                             self.slot_id,
                                             self.slot_num,
                                             self.slot_subject,
@@ -67,7 +68,7 @@ class CompensatedSlot(models.Model):
 
     class Meta:
         verbose_name_plural = 'slots'
-        ordering = ['slot_date', 'slot_num']
+        ordering = ['slot_week', 'slot_num']
 
     def __unicode__(self):
         return u"Slot at time %s in location %s" % (str(
