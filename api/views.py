@@ -211,4 +211,4 @@ class ConfirmCompensation(APIView):
             else:
                 # Maybe return not updated to notify users, regarding the warning!
                 not_updated.add(_id)
-            return list(not_updated), updated
+        return list(not_updated), updated
