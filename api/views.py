@@ -199,15 +199,14 @@ class ConfirmCompensation(APIView):
             location_key = "LOCATION" + str(_id)
             new_num = compensations_possibility.get(num_key)
             new_location = compensations_possibility.get(location_key)
-
-            if new_num and new_location:
-                Slot.objects.filter(pk=_id).update(slot_location=new_location, slot_num=new_num)
-                updated.append(_id)
-            elif new_num:
-                Slot.objects.filter(pk=_id).update(slot_num=new_num)
-                updated.append(_id)
-            elif new_location:
-                Slot.objects.filter(pk=_id).update(slot_location=new_location)
+            
+            slot_obj = Slot.objects.get(pk=_id)
+            if slot_obj is not None and (new_num or new_location):
+                if new_num:
+                    slot_obj.slot_num = new_num
+                if new_location:
+                    slot_obj.slot_location = new_location
+                slot_obj.save()
                 updated.append(_id)
             else:
                 # Maybe return not updated to notify users, regarding the warning!
