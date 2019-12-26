@@ -27,6 +27,15 @@ class QueryFormater:
         subject = subject.rstrip("tut").strip().rstrip("t").strip()
         subject = subject.rstrip("lab").strip().rstrip("l").strip()
         return subject
+    
+    @staticmethod
+    def clean_group(group):
+        """
+        Clears up any miss taken text from their groups
+        Ex. iet/met *
+        """
+        group = group.replace("/", " ")
+        return group
 
     @staticmethod
     def clean_formatted_slots(formatted_slots):
@@ -41,6 +50,8 @@ class QueryFormater:
         for (num, subject, slot_type, group, subgroup,
              location, teacher) in formatted_slots:
             subject = QueryFormater.clean_subject(subject)
+            group = QueryFormater.clean_group(group)
+            subgroup = QueryFormater.clean_group(subgroup)
             slot = (num, subject, slot_type, group, subgroup, location, teacher)
             cleaned_slots.append(slot)
         return cleaned_slots
